@@ -1,0 +1,6 @@
+memory_size = 640
+alloc P1 130
+alloc P2 60
+alloc P3 100
+free P2
+alloc P4 50
