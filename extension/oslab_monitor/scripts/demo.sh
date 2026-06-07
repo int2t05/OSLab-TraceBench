@@ -10,7 +10,7 @@ echo "== overview =="
 cat /proc/oslab_monitor/overview
 
 echo "== tasks =="
-cat /proc/oslab_monitor/tasks | head
+head /proc/oslab_monitor/tasks
 
 echo "== pid =="
 echo 1 | sudo tee /proc/oslab_monitor/pid >/dev/null
@@ -20,5 +20,8 @@ echo "== oslabctl =="
 cd "$ROOT_DIR/user"
 make
 ./oslabctl overview
-./oslabctl tasks | head
+tasks_output=$(mktemp)
+./oslabctl tasks > "$tasks_output"
+head "$tasks_output"
+rm -f "$tasks_output"
 sudo ./oslabctl pid 1

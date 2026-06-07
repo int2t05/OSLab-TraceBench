@@ -106,6 +106,10 @@ make clean
 bash -n extension/oslab_monitor/scripts/load.sh extension/oslab_monitor/scripts/unload.sh extension/oslab_monitor/scripts/demo.sh extension/oslab_monitor/tests/test_oslab_monitor.sh
 ```
 
+扩展脚本说明：
+
+- `demo.sh` 和 `test_oslab_monitor.sh` 在 `set -euo pipefail` 下避免使用 `cat ... | head` 直接截断长输出，防止 `SIGPIPE` 将正常演示误判为失败。
+
 已执行但因环境限制未通过：
 
 ```bash

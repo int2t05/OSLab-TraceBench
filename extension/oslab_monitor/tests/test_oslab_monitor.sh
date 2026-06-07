@@ -40,7 +40,7 @@ assert_contains "$overview_output" "kernel:"
 assert_contains "$overview_output" "total_tasks:"
 assert_contains "$overview_output" "mem_total_kb:"
 
-tasks_output=$(cat /proc/oslab_monitor/tasks | head -5)
+tasks_output=$(head -5 /proc/oslab_monitor/tasks)
 assert_contains "$tasks_output" "PID     COMM            STATE   POLICY  PRIO  NICE  THREADS  RSS_KB  MIN_FLT  MAJ_FLT"
 
 echo 1 | sudo tee /proc/oslab_monitor/pid >/dev/null
@@ -52,7 +52,10 @@ cd "$ROOT_DIR/user"
 make
 ctl_overview=$(./oslabctl overview)
 assert_contains "$ctl_overview" "module:"
-ctl_tasks=$(./oslabctl tasks | head -5)
+ctl_tasks_file=$(mktemp)
+./oslabctl tasks > "$ctl_tasks_file"
+ctl_tasks=$(head -5 "$ctl_tasks_file")
+rm -f "$ctl_tasks_file"
 assert_contains "$ctl_tasks" "PID     COMM"
 ctl_pid=$(sudo ./oslabctl pid 1)
 assert_contains "$ctl_pid" "pid:"
