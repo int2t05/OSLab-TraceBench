@@ -1,0 +1,4 @@
+process_count = 2
+time_quantum = 2
+P1 arrival=3 burst=2 priority=1
+P2 arrival=7 burst=1 priority=2
