@@ -1,0 +1,10 @@
+mkfs 1024 64
+mkdir /docs
+mkdir /docs/os
+create /docs/os/a.txt
+write /docs/os/a.txt hello_os
+read /docs/os/a.txt
+ls /docs/os
+delete /docs/os/a.txt
+ls /docs/os
+stat

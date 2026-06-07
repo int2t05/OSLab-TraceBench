@@ -1,0 +1,4 @@
+mkfs 128 64
+read /missing.txt
+create /docs/a.txt
+write /docs/a.txt hello world
