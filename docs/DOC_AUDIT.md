@@ -1,6 +1,6 @@
 # 文档一致性审计
 
-审计时间：2026-06-07
+审计时间：2026-06-08
 
 ## 1. 审计范围
 
@@ -16,6 +16,7 @@
 - `basic/`
 - `extension/oslab_monitor/`
 - `tests/run_all.sh`
+- `.gitattributes`
 
 ## 2. 当前实现状态
 
@@ -26,9 +27,9 @@
 | 文件系统模块 | 已实现并通过测试 | `basic/filesystem/`，`bash basic/filesystem/tests/run_tests.sh` |
 | 同步模块 | 已实现并通过测试 | `basic/sync/`，`bash basic/sync/tests/run_tests.sh` |
 | 根测试入口 | 已实现并通过测试 | `tests/run_all.sh`，`bash tests/run_all.sh` |
-| 扩展内核模块源码 | 已实现，待 Ubuntu VM 编译加载验证 | `extension/oslab_monitor/kernel/oslab_monitor.c` |
-| 用户态工具 | 已实现，当前环境已验证编译和 `--help` | `extension/oslab_monitor/user/oslabctl.c` |
-| 扩展脚本和集成测试 | 已实现，待 Ubuntu VM 运行 | `extension/oslab_monitor/scripts/`，`extension/oslab_monitor/tests/test_oslab_monitor.sh` |
+| 扩展内核模块源码 | 已实现并通过 Ubuntu VM 编译加载验证 | `extension/oslab_monitor/kernel/oslab_monitor.c`，`bash extension/oslab_monitor/tests/test_oslab_monitor.sh` |
+| 用户态工具 | 已实现并通过 Ubuntu VM 集成测试 | `extension/oslab_monitor/user/oslabctl.c`，`oslabctl overview/tasks/pid` |
+| 扩展脚本和集成测试 | 已实现并通过 Ubuntu VM 运行 | `extension/oslab_monitor/scripts/`，`extension/oslab_monitor/tests/test_oslab_monitor.sh` |
 
 ## 3. 新增源码和测试目录
 
@@ -68,6 +69,7 @@
 根测试：
 
 - `tests/run_all.sh`
+- `.gitattributes`
 
 ## 4. 文档与代码一致性
 
@@ -83,7 +85,8 @@
 | `/proc` 权限 | `overview/tasks = 0444`，`pid = 0644` | 一致 |
 | `/proc` 长输出使用 `seq_file` | `overview`、`tasks`、`pid` 均使用 `seq_file` | 一致 |
 | `oslabctl` 原样输出 `/proc` | 用户态工具直接读取并打印 proc 文件 | 一致 |
-| 扩展 Ubuntu VM 验证 | 当前环境不是 Ubuntu VM 默认内核验收环境 | 待验证 |
+| 扩展 Ubuntu VM 验证 | Ubuntu 24.04.2 LTS VM 已通过内核模块集成测试 | 一致 |
+| 脚本和 Makefile 行尾 | `.gitattributes` 固定 `*.sh` 和 `Makefile` 为 LF | 一致 |
 
 ## 5. 已执行验证
 
@@ -110,7 +113,33 @@ bash -n extension/oslab_monitor/scripts/load.sh extension/oslab_monitor/scripts/
 
 - `demo.sh` 和 `test_oslab_monitor.sh` 在 `set -euo pipefail` 下避免使用 `cat ... | head` 直接截断长输出，防止 `SIGPIPE` 将正常演示误判为失败。
 
-已执行但因环境限制未通过：
+Ubuntu VM 环境：
+
+```text
+Ubuntu 24.04.2 LTS
+Linux ubuntu2404 6.11.0-17-generic
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+GNU Make 4.3
+/lib/modules/6.11.0-17-generic/build present
+```
+
+Ubuntu VM 已执行并通过：
+
+```bash
+bash tests/run_all.sh
+cd extension/oslab_monitor
+bash tests/test_oslab_monitor.sh
+```
+
+扩展集成测试覆盖：
+
+- `oslab_monitor.ko` 编译。
+- `sudo insmod oslab_monitor.ko` 加载模块。
+- `/proc/oslab_monitor/overview`、`tasks`、`pid` 字段检查。
+- `oslabctl overview`、`oslabctl tasks`、`sudo oslabctl pid 1`。
+- `sudo rmmod oslab_monitor` 卸载并确认 `/proc/oslab_monitor/` 清理。
+
+曾在 WSL2 环境执行但因环境限制未通过：
 
 ```bash
 cd extension/oslab_monitor
@@ -123,7 +152,7 @@ bash tests/test_oslab_monitor.sh
 /lib/modules/5.15.123.1-microsoft-standard-WSL2/build: No such file or directory
 ```
 
-该失败与 PRD/TECH 一致：扩展部分不以 WSL2 作为默认验收环境，必须在 Ubuntu 22.04/24.04 VM 中验证。
+该失败与 PRD/TECH 一致：扩展部分不以 WSL2 作为默认验收环境；最终验收已在 Ubuntu 24.04.2 LTS VM 中完成。
 
 ## 6. 待补充报告材料
 
@@ -134,4 +163,4 @@ bash tests/test_oslab_monitor.sh
 
 ## 7. 审计结论
 
-基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现；最终运行验收仍需在 Ubuntu 22.04/24.04 VM 默认内核中完成。
+基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。

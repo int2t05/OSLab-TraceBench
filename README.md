@@ -16,9 +16,9 @@
 
 验证状态：
 
-- 基础四模块已在当前 Linux/WSL2 Bash 环境中通过 `bash tests/run_all.sh`。
-- `oslabctl` 用户态工具已在当前 Linux/WSL2 Bash 环境中完成编译和 `--help` 验证。
-- 内核模块加载、`/proc` 读取和卸载必须在 Ubuntu 22.04/24.04 VM 中验证；当前 WSL2 环境缺少 `/lib/modules/$(uname -r)/build`，不能作为扩展部分最终验收环境。
+- 基础四模块已在 Ubuntu 24.04.2 LTS VM 中通过 `bash tests/run_all.sh`。
+- 扩展模块已在 Ubuntu 24.04.2 LTS VM 中通过 `cd extension/oslab_monitor && bash tests/test_oslab_monitor.sh`，覆盖内核模块编译、加载、`/proc` 读取、`oslabctl` 和卸载清理。
+- WSL2 仍不作为扩展部分默认验收环境；内核模块最终验收以安装当前内核 headers 的 Ubuntu VM 为准。
 
 ## 项目结构
 

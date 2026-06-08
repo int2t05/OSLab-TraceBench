@@ -4,8 +4,8 @@
 
 当前验证状态：
 
-- 基础四模块已通过 `bash tests/run_all.sh`。
-- 扩展部分源码、脚本和 `oslabctl` 已实现；内核模块编译、加载、读取和卸载需在 Ubuntu 22.04/24.04 VM 中完成最终验证。
+- 基础四模块已在 Ubuntu 24.04.2 LTS VM 中通过 `bash tests/run_all.sh`。
+- 扩展部分已在 Ubuntu 24.04.2 LTS VM 中通过 `cd extension/oslab_monitor && bash tests/test_oslab_monitor.sh`，覆盖内核模块编译、加载、读取、`oslabctl` 和卸载清理。
 
 ## 1. 基础必做部分
 
