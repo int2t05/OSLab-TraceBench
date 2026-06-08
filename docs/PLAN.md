@@ -119,7 +119,9 @@
 **Files:**
 
 - Create: `.gitignore`
+
 - Create directories:
+
   - `basic/scheduler/include`
   - `basic/scheduler/src`
   - `basic/scheduler/tests`
@@ -226,14 +228,23 @@ git commit -m "chore: create project implementation skeleton"
 **Files:**
 
 - Create: `basic/scheduler/Makefile`
+
 - Create: `basic/scheduler/include/scheduler.h`
+
 - Create: `basic/scheduler/src/main.c`
+
 - Create: `basic/scheduler/src/parser.c`
+
 - Create: `basic/scheduler/src/scheduler.c`
+
 - Create: `basic/scheduler/src/output.c`
+
 - Create: `basic/scheduler/tests/sample.txt`
+
 - Create: `basic/scheduler/tests/idle_case.txt`
+
 - Create: `basic/scheduler/tests/invalid.txt`
+
 - Create: `basic/scheduler/tests/run_tests.sh`
 
 - [ ] **Step 1: 编写测试样例文件**
@@ -270,7 +281,9 @@ P2 arrival=1 burst=-3 priority=2
 Expected:
 
 - 固定样例可用于 oracle 校验。
+
 - idle 样例可验证 `IDLE` 时间段。
+
 - invalid 样例可验证 `error:` 和非 `0` 退出码。
 
 - [ ] **Step 2: 编写头文件职责**
@@ -288,6 +301,7 @@ Expected:
 Expected:
 
 - 所有 `.c` 文件通过同一个头文件共享类型。
+
 - `NAME_LEN` 固定为 `32`。
 
 - [ ] **Step 3: 编写 `main.c` 职责**
@@ -335,7 +349,9 @@ Expected:
 Expected:
 
 - 平局规则统一按 PRD：到达时间，再输入顺序。
+
 - 优先级数值越小越高。
+
 - RR 使用普通 ready queue。
 
 - [ ] **Step 6: 编写 `output.c` 职责**
@@ -365,6 +381,7 @@ make clean
 Expected:
 
 - `make` 生成 `basic/scheduler/scheduler`。
+
 - 编译包含 `src/*.c` 和 `include/`。
 
 - [ ] **Step 8: 编写 `tests/run_tests.sh`**
@@ -397,6 +414,7 @@ bash tests/run_tests.sh
 Expected:
 
 - 输出测试通过信息。
+
 - 退出码为 `0`。
 
 - [ ] **Step 10: 建议提交**
@@ -420,15 +438,25 @@ git commit -m "feat: implement scheduler module plan target"
 **Files:**
 
 - Create: `basic/memory/Makefile`
+
 - Create: `basic/memory/include/memory.h`
+
 - Create: `basic/memory/src/main.c`
+
 - Create: `basic/memory/src/parser.c`
+
 - Create: `basic/memory/src/partition.c`
+
 - Create: `basic/memory/src/paging.c`
+
 - Create: `basic/memory/src/output.c`
+
 - Create: `basic/memory/tests/partition.txt`
+
 - Create: `basic/memory/tests/pages.txt`
+
 - Create: `basic/memory/tests/invalid.txt`
+
 - Create: `basic/memory/tests/run_tests.sh`
 
 - [ ] **Step 1: 编写测试样例文件**
@@ -461,7 +489,9 @@ reference_string =
 Expected:
 
 - paging 样例用于 FIFO/LRU oracle。
+
 - partition 样例用于 FF/BF、分裂、回收、合并。
+
 - invalid 样例用于错误处理。
 
 - [ ] **Step 2: 编写头文件职责**
@@ -480,6 +510,7 @@ Expected:
 Expected:
 
 - `NAME_LEN` 固定为 `32`。
+
 - 空页框用 `-1`。
 
 - [ ] **Step 3: 编写 `main.c` 职责**
@@ -539,6 +570,7 @@ Expected:
 Expected:
 
 - FIFO 固定样例缺页次数为 `10`。
+
 - LRU 固定样例缺页次数为 `9`。
 
 - [ ] **Step 7: 编写 `output.c` 职责**
@@ -551,6 +583,7 @@ Expected:
 Expected:
 
 - FIFO 缺页率输出 `76.92%`。
+
 - LRU 缺页率输出 `69.23%`。
 
 - [ ] **Step 8: 编写 Makefile**
@@ -594,6 +627,7 @@ bash tests/run_tests.sh
 Expected:
 
 - 输出测试通过信息。
+
 - 退出码为 `0`。
 
 - [ ] **Step 11: 建议提交**
@@ -617,13 +651,21 @@ git commit -m "feat: implement memory module plan target"
 **Files:**
 
 - Create: `basic/filesystem/Makefile`
+
 - Create: `basic/filesystem/include/filesystem.h`
+
 - Create: `basic/filesystem/src/main.c`
+
 - Create: `basic/filesystem/src/parser.c`
+
 - Create: `basic/filesystem/src/filesystem.c`
+
 - Create: `basic/filesystem/src/output.c`
+
 - Create: `basic/filesystem/tests/fs_commands.txt`
+
 - Create: `basic/filesystem/tests/invalid.txt`
+
 - Create: `basic/filesystem/tests/run_tests.sh`
 
 - [ ] **Step 1: 编写测试样例文件**
@@ -655,6 +697,7 @@ write /docs/a.txt hello world
 Expected:
 
 - 正常样例覆盖多级目录、创建、覆盖写、读取、列表、删除、统计。
+
 - 错误样例覆盖不存在文件、父目录不存在、含空格内容。
 
 - [ ] **Step 2: 编写头文件职责**
@@ -673,6 +716,7 @@ Expected:
 Expected:
 
 - `FS_NAME_LEN = 32`。
+
 - `FS_PATH_LEN = 256`。
 
 - [ ] **Step 3: 编写 `main.c` 职责**
@@ -689,7 +733,9 @@ Expected:
 Expected:
 
 - 正常命令继续执行。
+
 - 单条非法命令输出 `error:` 后继续处理后续命令。
+
 - 只要本次输入中出现过命令错误，程序最终返回非 `0`。
 
 - [ ] **Step 4: 编写 `parser.c` 职责**
@@ -729,6 +775,7 @@ Expected:
 Expected:
 
 - 支持 `/docs/os/a.txt`。
+
 - 删除后 `ls /docs/os` 不再包含 `a.txt`。
 
 - [ ] **Step 6: 编写 `output.c` 职责**
@@ -785,6 +832,7 @@ bash tests/run_tests.sh
 Expected:
 
 - 输出测试通过信息。
+
 - 退出码为 `0`。
 
 - [ ] **Step 10: 建议提交**
@@ -807,13 +855,21 @@ git commit -m "feat: implement filesystem module plan target"
 **Files:**
 
 - Create: `basic/sync/Makefile`
+
 - Create: `basic/sync/include/sync.h`
+
 - Create: `basic/sync/src/main.c`
+
 - Create: `basic/sync/src/parser.c`
+
 - Create: `basic/sync/src/producer_consumer.c`
+
 - Create: `basic/sync/src/readers_writers.c`
+
 - Create: `basic/sync/src/dining_philosophers.c`
+
 - Create: `basic/sync/src/output.c`
+
 - Create: `basic/sync/tests/run_tests.sh`
 
 - [ ] **Step 1: 编写头文件职责**
@@ -861,7 +917,9 @@ Expected:
 Expected:
 
 - 缓冲区满时生产者等待。
+
 - 缓冲区空时消费者等待。
+
 - 默认参数下自动结束。
 
 - [ ] **Step 4: 编写 `readers_writers.c` 职责**
@@ -922,6 +980,7 @@ make clean
 Expected:
 
 - `make` 生成 `basic/sync/sync`。
+
 - 链接 pthread。
 
 - [ ] **Step 8: 编写 `tests/run_tests.sh`**
@@ -953,6 +1012,7 @@ bash tests/run_tests.sh
 Expected:
 
 - 输出测试通过信息。
+
 - 退出码为 `0`。
 
 - [ ] **Step 10: 建议提交**
@@ -977,6 +1037,7 @@ git commit -m "feat: implement sync module plan target"
 **Files:**
 
 - Create: `extension/oslab_monitor/kernel/oslab_monitor.c`
+
 - Create: `extension/oslab_monitor/kernel/Makefile`
 
 - [ ] **Step 1: 编写内核模块 Makefile**
@@ -1006,6 +1067,7 @@ Expected:
 Expected:
 
 - `sudo insmod oslab_monitor.ko` 后目录存在。
+
 - `sudo rmmod oslab_monitor` 后目录被清理。
 
 - [ ] **Step 3: 编写 `overview` 接口职责**
@@ -1027,6 +1089,7 @@ Expected:
 Expected:
 
 - 字段名稳定。
+
 - 数值非负。
 
 - [ ] **Step 4: 在 Ubuntu VM 验证 overview**
@@ -1044,6 +1107,7 @@ sudo rmmod oslab_monitor
 Expected:
 
 - `cat` 输出包含 `module:`、`kernel:`、`total_tasks:`、`mem_total_kb:`。
+
 - 卸载后 `/proc/oslab_monitor/` 不存在。
 
 - [ ] **Step 5: 建议提交**
@@ -1066,6 +1130,7 @@ git commit -m "feat: add oslab monitor overview proc interface"
 **Files:**
 
 - Modify: `extension/oslab_monitor/kernel/oslab_monitor.c`
+
 - Modify: `extension/oslab_monitor/kernel/Makefile`
 
 - [ ] **Step 1: 扩展 `/proc` 节点创建**
@@ -1103,7 +1168,9 @@ PID     COMM            STATE   POLICY  PRIO  NICE  THREADS  RSS_KB  MIN_FLT  MA
 Expected:
 
 - 不固定小样本数量。
+
 - `mm == NULL` 时不访问空指针。
+
 - 使用完 `mm_struct` 后释放。
 
 - [ ] **Step 3: 编写 `pid` 写入职责**
@@ -1159,7 +1226,9 @@ sudo rmmod oslab_monitor
 Expected:
 
 - `tasks` 输出表头和至少一条进程记录。
+
 - `pid` 输出包含 `pid:` 和 `comm:`。
+
 - 模块卸载后 `/proc/oslab_monitor/` 不存在。
 
 - [ ] **Step 6: 建议提交**
@@ -1183,6 +1252,7 @@ git commit -m "feat: add oslab monitor task and pid proc interfaces"
 **Files:**
 
 - Create: `extension/oslab_monitor/user/oslabctl.c`
+
 - Create: `extension/oslab_monitor/user/Makefile`
 
 - [ ] **Step 1: 编写用户态 Makefile**
@@ -1210,7 +1280,9 @@ Expected:
 Expected:
 
 - `overview` 原样输出 `/proc/oslab_monitor/overview`。
+
 - `tasks` 原样输出 `/proc/oslab_monitor/tasks`。
+
 - `pid` 写入 `/proc/oslab_monitor/pid` 后原样读取输出。
 
 - [ ] **Step 3: 编写错误处理职责**
@@ -1248,7 +1320,9 @@ sudo rmmod oslab_monitor
 Expected:
 
 - `overview` 与直接读取 `/proc/oslab_monitor/overview` 字段一致。
+
 - `tasks` 与直接读取 `/proc/oslab_monitor/tasks` 字段一致。
+
 - `pid 1` 输出包含 `pid:` 和 `comm:`。
 
 - [ ] **Step 5: 建议提交**
@@ -1271,8 +1345,11 @@ git commit -m "feat: add oslabctl proc wrapper"
 **Files:**
 
 - Create: `extension/oslab_monitor/scripts/load.sh`
+
 - Create: `extension/oslab_monitor/scripts/unload.sh`
+
 - Create: `extension/oslab_monitor/scripts/demo.sh`
+
 - Create: `extension/oslab_monitor/tests/test_oslab_monitor.sh`
 
 - [ ] **Step 1: 编写 `load.sh` 职责**
@@ -1350,6 +1427,7 @@ bash tests/test_oslab_monitor.sh
 Expected:
 
 - 测试通过。
+
 - 失败时 trap 尽量卸载模块。
 
 - [ ] **Step 6: 建议提交**
@@ -1392,6 +1470,7 @@ bash tests/test_oslab_monitor.sh
 Expected:
 
 - 基础模块测试全部通过时返回 `0`。
+
 - 任一基础模块失败时返回非 `0`。
 
 - [ ] **Step 2: 运行根测试**
@@ -1405,6 +1484,7 @@ bash tests/run_all.sh
 Expected:
 
 - scheduler、memory、filesystem、sync 测试全部通过。
+
 - 输出扩展测试需在 Ubuntu VM 中单独运行的说明。
 
 - [ ] **Step 3: 建议提交**
@@ -1427,8 +1507,11 @@ git commit -m "test: add root test runner"
 **Files:**
 
 - Create: `docs/REPORT_OUTLINE.md`
+
 - Create: `docs/DOC_AUDIT.md`
+
 - Modify: `README.md`
+
 - Modify: `docs/FEATURES.md`
 
 - [ ] **Step 1: 编写 `docs/REPORT_OUTLINE.md` 职责**
@@ -1508,27 +1591,27 @@ git commit -m "docs: add report outline and sync project documentation"
 
 ## 5. 计划一致性检查表
 
-| 来源要求 | PLAN 对应任务 | 状态 |
-|---|---|---|
-| 基础四个独立 CLI | Task 2、3、4、5 | 已覆盖 |
-| 每个基础模块 `Makefile + include + src + tests` | Task 1、2、3、4、5 | 已覆盖 |
-| 每个基础模块 `tests/run_tests.sh` | Task 2、3、4、5 | 已覆盖 |
-| 根测试脚本 | Task 10 | 已覆盖 |
-| 调度 FCFS/SJF/RR/Priority | Task 2 | 已覆盖 |
-| 调度固定 oracle | Task 2 | 已覆盖 |
-| 内存 FF/BF/FIFO/LRU | Task 3 | 已覆盖 |
-| 页面置换固定 oracle | Task 3 | 已覆盖 |
-| 文件系统多级目录、块位图、覆盖写 | Task 4 | 已覆盖 |
-| 同步 producer_consumer/readers_writers/dining_philosophers | Task 5 | 已覆盖 |
-| 同步测试使用 `timeout 5s` | Task 5 | 已覆盖 |
-| 内核模块 `overview` | Task 6 | 已覆盖 |
-| 内核模块 `tasks` 和 `pid` | Task 7 | 已覆盖 |
-| `/proc` 权限 `overview/tasks = 0444`、`pid = 0644` | Task 7 | 已覆盖 |
-| `oslabctl` 原样输出 `/proc` 内容 | Task 8 | 已覆盖 |
-| 扩展脚本和 trap 清理测试 | Task 9 | 已覆盖 |
-| Ubuntu VM 验证说明 | Task 6、7、8、9、10 | 已覆盖 |
-| 报告提纲 | Task 11 | 已覆盖 |
-| 文档同步 | Task 11 | 已覆盖 |
+| 来源要求                                                     | PLAN 对应任务       | 状态  |
+| -------------------------------------------------------- | --------------- | --- |
+| 基础四个独立 CLI                                               | Task 2、3、4、5    | 已覆盖 |
+| 每个基础模块 `Makefile + include + src + tests`                | Task 1、2、3、4、5  | 已覆盖 |
+| 每个基础模块 `tests/run_tests.sh`                              | Task 2、3、4、5    | 已覆盖 |
+| 根测试脚本                                                    | Task 10         | 已覆盖 |
+| 调度 FCFS/SJF/RR/Priority                                  | Task 2          | 已覆盖 |
+| 调度固定 oracle                                              | Task 2          | 已覆盖 |
+| 内存 FF/BF/FIFO/LRU                                        | Task 3          | 已覆盖 |
+| 页面置换固定 oracle                                            | Task 3          | 已覆盖 |
+| 文件系统多级目录、块位图、覆盖写                                         | Task 4          | 已覆盖 |
+| 同步 producer_consumer/readers_writers/dining_philosophers | Task 5          | 已覆盖 |
+| 同步测试使用 `timeout 5s`                                      | Task 5          | 已覆盖 |
+| 内核模块 `overview`                                          | Task 6          | 已覆盖 |
+| 内核模块 `tasks` 和 `pid`                                     | Task 7          | 已覆盖 |
+| `/proc` 权限 `overview/tasks = 0444`、`pid = 0644`          | Task 7          | 已覆盖 |
+| `oslabctl` 原样输出 `/proc` 内容                               | Task 8          | 已覆盖 |
+| 扩展脚本和 trap 清理测试                                          | Task 9          | 已覆盖 |
+| Ubuntu VM 验证说明                                           | Task 6、7、8、9、10 | 已覆盖 |
+| 报告提纲                                                     | Task 11         | 已覆盖 |
+| 文档同步                                                     | Task 11         | 已覆盖 |
 
 ## 6. 执行说明
 
