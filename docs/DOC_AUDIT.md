@@ -12,6 +12,7 @@
 - `docs/FEATURES.md`
 - `docs/PLAN.md`
 - `docs/REPORT_OUTLINE.md`
+- `docs/COURSE_REPORT.md`
 - `docs/DOC_AUDIT.md`
 - `basic/`
 - `extension/oslab_monitor/`
@@ -30,6 +31,8 @@
 | 扩展内核模块源码 | 已实现并通过 Ubuntu VM 编译加载验证 | `extension/oslab_monitor/kernel/oslab_monitor.c`，`bash extension/oslab_monitor/tests/test_oslab_monitor.sh` |
 | 用户态工具 | 已实现并通过 Ubuntu VM 集成测试 | `extension/oslab_monitor/user/oslabctl.c`，`oslabctl overview/tasks/pid` |
 | 扩展脚本和集成测试 | 已实现并通过 Ubuntu VM 运行 | `extension/oslab_monitor/scripts/`，`extension/oslab_monitor/tests/test_oslab_monitor.sh` |
+| 课程设计报告 | 已撰写详细报告 | `docs/COURSE_REPORT.md` |
+| 仓库展示 README | 已简化为运行说明入口 | `README.md` |
 
 ## 3. 新增源码和测试目录
 
@@ -71,6 +74,10 @@
 - `tests/run_all.sh`
 - `.gitattributes`
 
+文档：
+
+- `docs/COURSE_REPORT.md`
+
 ## 4. 文档与代码一致性
 
 | 文档要求 | 当前代码状态 | 结论 |
@@ -87,6 +94,8 @@
 | `oslabctl` 原样输出 `/proc` | 用户态工具直接读取并打印 proc 文件 | 一致 |
 | 扩展 Ubuntu VM 验证 | Ubuntu 24.04.2 LTS VM 已通过内核模块集成测试 | 一致 |
 | 脚本和 Makefile 行尾 | `.gitattributes` 固定 `*.sh` 和 `Makefile` 为 LF | 一致 |
+| 课程报告 | `docs/COURSE_REPORT.md` 覆盖项目概述、环境、设计、测试、问题和总结 | 一致 |
+| README 展示面 | README 保留项目简介、环境、运行命令和报告入口，去除长篇设计字段 | 一致 |
 
 ## 5. 已执行验证
 
@@ -154,13 +163,13 @@ bash tests/test_oslab_monitor.sh
 
 该失败与 PRD/TECH 一致：扩展部分不以 WSL2 作为默认验收环境；最终验收已在 Ubuntu 24.04.2 LTS VM 中完成。
 
-## 6. 待补充报告材料
+## 6. 报告材料状态
 
-- 基础四模块运行截图或完整输出文本。
-- `bash tests/run_all.sh` 输出截图或文本。
-- Ubuntu VM 中 `oslab_monitor.ko` 编译、加载、读取 `/proc`、卸载截图或文本。
-- Ubuntu VM 中 `oslabctl overview`、`oslabctl tasks`、`sudo ./oslabctl pid 1` 输出截图或文本。
+- `docs/COURSE_REPORT.md` 已包含课程报告正文。
+- 基础四模块测试结果已在报告中以文本形式记录。
+- Ubuntu VM 中扩展模块编译、加载、读取 `/proc`、`oslabctl`、卸载测试结果已在报告中以文本形式记录。
+- 若课程提交要求必须使用截图，可按 README 中命令重新运行并截图。
 
 ## 7. 审计结论
 
-基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。
+基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。当前 README 已调整为简洁运行入口，详细课程设计报告已写入 `docs/COURSE_REPORT.md`。
