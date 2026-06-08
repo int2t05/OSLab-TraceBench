@@ -51,7 +51,7 @@
 ## 5. 推荐目录结构
 
 ```text
-OS-Design/
+OSLab-TraceBench/
 ├── basic/
 │   ├── scheduler/
 │   │   ├── Makefile

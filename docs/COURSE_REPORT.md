@@ -1,12 +1,12 @@
-# OS-Design 操作系统课程设计报告
+# OSLab TraceBench 操作系统课程设计报告
 
 ## 1. 项目基本信息
 
-项目名称：OS-Design 操作系统课程设计
+项目名称：OSLab TraceBench 操作系统课程设计
 
 项目类型：基础必做部分 + 自由扩展提升部分
 
-代码仓库：`https://github.com/int2t05/OS-Design`
+代码仓库：`https://github.com/int2t05/OSLab-TraceBench`
 
 开发语言：C
 
@@ -60,7 +60,7 @@ GNU Make 4.3
 项目根目录结构如下：
 
 ```text
-OS-Design/
+OSLab-TraceBench/
 ├── basic/
 │   ├── scheduler/       处理机调度模块
 │   ├── memory/          内存管理模块

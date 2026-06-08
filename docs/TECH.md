@@ -102,7 +102,7 @@ graph TD
 ### 3.3 目录结构
 
 ```text
-OS-Design/
+OSLab-TraceBench/
 ├── basic/
 │   ├── scheduler/
 │   │   ├── Makefile

@@ -1,6 +1,6 @@
 # 功能清单
 
-本文档汇总 OS-Design 项目的用户可见功能。详细需求以 `docs/PRD.md` 为准，技术实现以 `docs/TECH.md` 为准。
+本文档汇总 OSLab TraceBench 项目的用户可见功能。详细需求以 `docs/PRD.md` 为准，技术实现以 `docs/TECH.md` 为准。
 
 当前验证状态：
 

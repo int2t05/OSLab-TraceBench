@@ -1,6 +1,6 @@
-# OS-Design
+# OSLab TraceBench
 
-操作系统课程设计项目。仓库包含基础必做部分和一个 Linux `/proc` 扩展模块。
+操作系统课程设计项目。当前已完成基础 OS 机制模拟和 Linux `/proc` 内核观测扩展；v2 阶段规划为 TraceBench 资源压力与系统观测实验平台。
 
 基础部分用 C 命令行程序模拟：
 
@@ -138,6 +138,7 @@ extension/oslab_monitor/      Linux 内核模块、oslabctl、脚本和集成测
 tests/run_all.sh              基础模块一键测试入口
 docs/COURSE_REPORT.md         课程设计报告
 docs/PRD.md                   需求文档
+docs/PRDv2.md                 TraceBench v2 需求文档
 docs/TECH.md                  技术方案
 docs/FEATURES.md              功能清单
 docs/PLAN.md                  实现计划

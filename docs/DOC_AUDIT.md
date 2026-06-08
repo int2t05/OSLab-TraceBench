@@ -2,6 +2,12 @@
 
 审计时间：2026-06-08
 
+最近更新：
+
+- 项目展示名已更新为 `OSLab TraceBench`。
+- GitHub 仓库名计划同步为 `OSLab-TraceBench`。
+- 新增 v2 需求文档 `docs/PRDv2.md`，规划 Linux 资源压力、cgroup v2、PSI、tracefs/bpftrace 和自动报告方向。
+
 ## 1. 审计范围
 
 本次审计覆盖：
@@ -13,6 +19,7 @@
 - `docs/PLAN.md`
 - `docs/REPORT_OUTLINE.md`
 - `docs/COURSE_REPORT.md`
+- `docs/PRDv2.md`
 - `docs/DOC_AUDIT.md`
 - `basic/`
 - `extension/oslab_monitor/`
@@ -32,6 +39,7 @@
 | 用户态工具 | 已实现并通过 Ubuntu VM 集成测试 | `extension/oslab_monitor/user/oslabctl.c`，`oslabctl overview/tasks/pid` |
 | 扩展脚本和集成测试 | 已实现并通过 Ubuntu VM 运行 | `extension/oslab_monitor/scripts/`，`extension/oslab_monitor/tests/test_oslab_monitor.sh` |
 | 课程设计报告 | 已撰写详细报告 | `docs/COURSE_REPORT.md` |
+| v2 需求文档 | 已撰写明确需求 | `docs/PRDv2.md` |
 | 仓库展示 README | 已简化为运行说明入口 | `README.md` |
 
 ## 3. 新增源码和测试目录
@@ -77,6 +85,7 @@
 文档：
 
 - `docs/COURSE_REPORT.md`
+- `docs/PRDv2.md`
 
 ## 4. 文档与代码一致性
 
@@ -95,6 +104,7 @@
 | 扩展 Ubuntu VM 验证 | Ubuntu 24.04.2 LTS VM 已通过内核模块集成测试 | 一致 |
 | 脚本和 Makefile 行尾 | `.gitattributes` 固定 `*.sh` 和 `Makefile` 为 LF | 一致 |
 | 课程报告 | `docs/COURSE_REPORT.md` 覆盖项目概述、环境、设计、测试、问题和总结 | 一致 |
+| v2 需求文档 | `docs/PRDv2.md` 明确 TraceBench 的 P0/P1/P2 需求、命令、输出和验收标准 | 一致 |
 | README 展示面 | README 保留项目简介、环境、运行命令和报告入口，去除长篇设计字段 | 一致 |
 
 ## 5. 已执行验证
@@ -172,4 +182,4 @@ bash tests/test_oslab_monitor.sh
 
 ## 7. 审计结论
 
-基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。当前 README 已调整为简洁运行入口，详细课程设计报告已写入 `docs/COURSE_REPORT.md`。
+基础部分代码、测试和文档当前一致。扩展部分源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。当前 README 已调整为简洁运行入口，详细课程设计报告已写入 `docs/COURSE_REPORT.md`，v2 需求已写入 `docs/PRDv2.md`。

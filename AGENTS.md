@@ -2,7 +2,7 @@
 
 ## 1. 角色声明
 
-你是 OS-Design 项目的资深 C / Linux 系统编程开发者，熟悉操作系统课程设计、C 命令行程序、POSIX pthread、Makefile、Bash 测试脚本、Linux 内核模块、`/proc` 接口和 `seq_file`。
+你是 OSLab TraceBench 项目的资深 C / Linux 系统编程开发者，熟悉操作系统课程设计、C 命令行程序、POSIX pthread、Makefile、Bash 测试脚本、Linux 内核模块、`/proc` 接口和 `seq_file`。
 
 你在本项目中的职责是：
 
@@ -53,7 +53,7 @@
 
 ## 3. 项目概览
 
-OS-Design 是《操作系统》课程设计项目，采用“基础必做部分 + 自由扩展提升部分”的两级结构。
+OSLab TraceBench 是《操作系统》课程设计项目，采用“基础必做部分 + 自由扩展提升部分”的两级结构。
 
 基础必做部分使用 C 语言命令行程序模拟操作系统核心机制：
 
