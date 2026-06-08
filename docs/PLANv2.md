@@ -317,13 +317,21 @@ oslab_mem_available_kb
 **Files:**
 
 - Create directory: `extension/tracebench/include/`
+
 - Create directory: `extension/tracebench/src/`
+
 - Create directory: `extension/tracebench/scripts/`
+
 - Create directory: `extension/tracebench/tests/`
+
 - Create directory: `extension/tracebench/output/`
+
 - Create directory: `extension/tracebench/bpftrace/`
+
 - Create: `extension/tracebench/output/.gitkeep`
+
 - Create: `extension/tracebench/bpftrace/README.md`
+
 - Modify: `.gitignore`
 
 - [ ] **Step 1: 创建目录结构**
@@ -342,6 +350,7 @@ mkdir -p extension/tracebench/bpftrace
 Expected:
 
 - 所有目录存在。
+
 - 不创建 `test/` 单数目录。
 
 - [ ] **Step 2: 创建 `output/.gitkeep`**
@@ -367,6 +376,7 @@ Expected:
 Expected:
 
 - P1 预留边界明确。
+
 - 不创建 `.bt` 脚本作为 P0 必需文件。
 
 - [ ] **Step 4: 追加 `.gitignore` 规则**
@@ -383,6 +393,7 @@ extension/tracebench/output/*/
 Expected:
 
 - `tracebench` 可执行文件和输出子目录不进入版本控制。
+
 - `extension/tracebench/output/.gitkeep` 仍可提交。
 
 - [ ] **Step 5: 验证骨架**
@@ -424,10 +435,15 @@ git commit -m "chore: create tracebench v2 skeleton"
 **Files:**
 
 - Create: `extension/tracebench/Makefile`
+
 - Create: `extension/tracebench/include/tracebench.h`
+
 - Create: `extension/tracebench/src/main.c`
+
 - Create: `extension/tracebench/src/args.c`
+
 - Create: `extension/tracebench/src/util.c`
+
 - Create: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 `Makefile` 职责**
@@ -464,6 +480,7 @@ Expected:
 Expected:
 
 - 所有 `.c` 文件只通过 `tracebench.h` 共享模块内类型和函数。
+
 - 不创建跨项目公共库。
 
 - [ ] **Step 3: 编写 `main.c` 职责**
@@ -572,7 +589,9 @@ make clean
 Expected:
 
 - `make` 成功。
+
 - `--help` 输出包含 `run`、`report`、`cleanup`。
+
 - 测试脚本返回 `0`。
 
 - [ ] **Step 8: 建议提交**
@@ -595,9 +614,13 @@ git commit -m "feat: add tracebench cli argument parsing"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/main.c`
+
 - Modify: `extension/tracebench/src/util.c`
+
 - Modify: `extension/tracebench/src/report.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 扩展 `util.c` 文件和目录辅助职责**
@@ -669,6 +692,7 @@ tracebench_version:
 Expected:
 
 - `tracebench_version` 可以固定为 `v2-p0`。
+
 - 若 PSI 文件缺失，`environment.txt` 记录缺失，同时默认 run 返回 `error:`。
 
 - [ ] **Step 4: `run --no-cgroup` 低权限最小路径**
@@ -714,6 +738,7 @@ make clean
 Expected:
 
 - `command.txt` 和 `environment.txt` 生成。
+
 - CLI 测试仍通过。
 
 - [ ] **Step 7: 建议提交**
@@ -735,8 +760,11 @@ git commit -m "feat: write tracebench command and environment files"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/sampler.c`
+
 - Modify: `extension/tracebench/src/util.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 PSI 解析职责**
@@ -799,6 +827,7 @@ make clean
 Expected:
 
 - PSI 路径存在。
+
 - 测试脚本返回 `0`。
 
 - [ ] **Step 5: 建议提交**
@@ -820,8 +849,11 @@ git commit -m "feat: add psi pressure parsing"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/cgroup.c`
+
 - Modify: `extension/tracebench/src/util.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 cgroup v2 检测职责**
@@ -836,6 +868,7 @@ git commit -m "feat: add psi pressure parsing"
 Expected:
 
 - 非 root 默认 `run` 返回非 `0`，输出包含 `error:`。
+
 - `--no-cgroup` 不执行写入性 cgroup 检测。
 
 - [ ] **Step 2: 编写路径生成职责**
@@ -898,6 +931,7 @@ memory.events
 Expected:
 
 - 不存在的增强字段后续 CSV 输出 `NA`。
+
 - `usage_usec`、`memory.current`、`memory.events` 最低字段缺失时默认 run 返回 `error:`。
 
 - [ ] **Step 5: 编写单次 run cgroup 清理职责**
@@ -950,6 +984,7 @@ make clean
 Expected:
 
 - cgroup 环境检查通过。
+
 - 需要完整 run 的检查可在 Task 9 后启用。
 
 - [ ] **Step 8: 建议提交**
@@ -971,10 +1006,15 @@ git commit -m "feat: add tracebench cgroup v2 management"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/main.c`
+
 - Modify: `extension/tracebench/src/workload.c`
+
 - Modify: `extension/tracebench/src/sampler.c`
+
 - Modify: `extension/tracebench/src/cgroup.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 `run` 控制器职责**
@@ -1045,7 +1085,9 @@ test -f output/test_cpu/environment.txt
 Expected:
 
 - 命令返回 `0`。
+
 - 输出目录存在。
+
 - 后续 Task 9 再检查 `samples.csv` 内容。
 
 - [ ] **Step 5: 检查默认非 root 失败**
@@ -1079,6 +1121,7 @@ make clean
 Expected:
 
 - CPU profile 成功运行并退出。
+
 - 非 root 默认模式失败检查通过。
 
 - [ ] **Step 7: 建议提交**
@@ -1101,8 +1144,11 @@ git commit -m "feat: add tracebench cpu workload run control"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/workload.c`
+
 - Modify: `extension/tracebench/src/args.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 memory 参数职责**
@@ -1131,6 +1177,7 @@ Expected:
 Expected:
 
 - 默认不触发 OOM。
+
 - `duration=3 --memory-mb 64` 应在 6 秒内结束。
 
 - [ ] **Step 3: 扩展测试脚本检查 memory profile**
@@ -1146,6 +1193,7 @@ test -f output/test_memory/environment.txt
 Expected:
 
 - 命令返回 `0`。
+
 - 输出目录存在。
 
 - [ ] **Step 4: 增加非法 memory 参数测试**
@@ -1200,9 +1248,13 @@ git commit -m "feat: add tracebench memory workload"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/workload.c`
+
 - Modify: `extension/tracebench/src/args.c`
+
 - Modify: `extension/tracebench/src/util.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 I/O 参数职责**
@@ -1232,6 +1284,7 @@ Expected:
 Expected:
 
 - 不无限增长磁盘使用。
+
 - `duration=3 --io-mb 16` 应在合理时间内结束。
 
 - [ ] **Step 3: 扩展测试脚本检查 I/O profile**
@@ -1280,6 +1333,7 @@ make clean
 Expected:
 
 - CPU、memory、io 三类 profile 均可运行。
+
 - I/O 临时文件正常清理。
 
 - [ ] **Step 6: 建议提交**
@@ -1302,9 +1356,13 @@ git commit -m "feat: add tracebench io workload"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/sampler.c`
+
 - Modify: `extension/tracebench/src/main.c`
+
 - Modify: `extension/tracebench/src/report.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 CSV 表头职责**
@@ -1340,7 +1398,9 @@ Expected:
 Expected:
 
 - 布尔值使用 `true` 或 `false`。
+
 - 缺失字段使用 `NA`。
+
 - 每行字段数量与表头一致。
 
 - [ ] **Step 3: 编写采样循环职责**
@@ -1422,7 +1482,9 @@ grep -q "NA" output/test_nocg/samples.csv
 Expected:
 
 - 低权限演示可运行。
+
 - cgroup 字段为 `NA`。
+
 - 该检查不替代 sudo P0 测试。
 
 - [ ] **Step 8: 运行 CSV 测试**
@@ -1439,6 +1501,7 @@ make clean
 Expected:
 
 - 三个 profile 都生成 `samples.csv`。
+
 - 表头、行数、字段数量检查通过。
 
 - [ ] **Step 9: 建议提交**
@@ -1461,8 +1524,11 @@ git commit -m "feat: add tracebench csv sampling output"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/sampler.c`
+
 - Modify: `extension/tracebench/src/args.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 oslab_monitor 默认采样职责**
@@ -1484,6 +1550,7 @@ git commit -m "feat: add tracebench csv sampling output"
 Expected:
 
 - 文件存在但字段缺失时，缺失字段输出 `NA`。
+
 - 文件不存在时默认不报错。
 
 - [ ] **Step 2: 编写 `--with-oslab-monitor` 职责**
@@ -1565,6 +1632,7 @@ make clean
 Expected:
 
 - 默认未加载模块不失败。
+
 - `--with-oslab-monitor` 语义符合 TECHv2。
 
 - [ ] **Step 7: 建议提交**
@@ -1586,9 +1654,13 @@ git commit -m "feat: add oslab monitor overview sampling"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/report.c`
+
 - Modify: `extension/tracebench/src/main.c`
+
 - Modify: `extension/tracebench/src/args.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 `summary.txt` 职责**
@@ -1636,6 +1708,7 @@ Expected:
 Expected:
 
 - `NA` 字段统计时跳过。
+
 - 全列 `NA` 时输出“未采集”。
 
 - [ ] **Step 3: 编写 `report` 子命令职责**
@@ -1756,9 +1829,13 @@ git commit -m "feat: add tracebench summary and markdown report"
 **Files:**
 
 - Modify: `extension/tracebench/include/tracebench.h`
+
 - Modify: `extension/tracebench/src/cgroup.c`
+
 - Modify: `extension/tracebench/src/main.c`
+
 - Modify: `extension/tracebench/src/util.c`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 cleanup 命令职责**
@@ -1827,6 +1904,7 @@ test ! -f output/test_io/tracebench_io.tmp
 Expected:
 
 - cleanup 不删除 CSV 和报告。
+
 - I/O 临时文件不存在。
 
 - [ ] **Step 5: 增加 cleanup 非 root 错误测试**
@@ -1881,9 +1959,13 @@ git commit -m "feat: add tracebench cleanup command"
 **Files:**
 
 - Create: `extension/tracebench/scripts/run_cpu_demo.sh`
+
 - Create: `extension/tracebench/scripts/run_memory_demo.sh`
+
 - Create: `extension/tracebench/scripts/run_io_demo.sh`
+
 - Create: `extension/tracebench/scripts/cleanup.sh`
+
 - Modify: `extension/tracebench/tests/test_tracebench.sh`
 
 - [ ] **Step 1: 编写 `run_cpu_demo.sh` 职责**
@@ -2078,7 +2160,9 @@ sudo ./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 -
 Expected:
 
 - 每条命令返回 `0`。
+
 - 每个输出目录包含 `command.txt`、`environment.txt`、`samples.csv`、`summary.txt`。
+
 - I/O 临时文件正常删除。
 
 - [ ] **Step 6: 定稿 CSV 检查**
@@ -2127,6 +2211,7 @@ grep -q "NA" output/test_nocg/samples.csv
 Expected:
 
 - 低权限演示可运行。
+
 - 报告和 summary 必须说明不满足 P0 完整验收。
 
 - [ ] **Step 9: 定稿 oslab_monitor 检查**
@@ -2169,6 +2254,7 @@ sudo bash tests/test_tracebench.sh
 Expected:
 
 - 测试脚本返回 `0`。
+
 - 输出说明 CPU、memory、io、CSV、report、cleanup 均通过。
 
 - [ ] **Step 12: 建议提交**
@@ -2190,9 +2276,13 @@ git commit -m "test: finalize tracebench p0 integration test"
 **Files:**
 
 - Modify: `README.md`
+
 - Modify: `docs/FEATURES.md`
+
 - Modify: `docs/DOC_AUDIT.md`
+
 - Create/Modify: `docs/TRACEBENCH_REPORT_TEMPLATE.md`
+
 - Modify: `docs/PLANv2.md` if implementation changes planned filenames, commands, or tests
 
 - [ ] **Step 1: 同步 README 职责**
@@ -2316,6 +2406,7 @@ rg -n "0644[[:space:]]+或[[:space:]]+0666" README.md docs
 Expected:
 
 - 不存在过时 `/proc` 权限表述。
+
 - README、FEATURES、DOC_AUDIT、报告模板均能找到 v2 关键内容。
 
 - [ ] **Step 6: 运行最终验收命令**
@@ -2332,7 +2423,9 @@ make clean
 Expected:
 
 - `make` 成功。
+
 - P0 集成测试通过。
+
 - `make clean` 清理编译产物，不删除输出报告材料。
 
 - [ ] **Step 7: 建议提交**
@@ -2392,35 +2485,35 @@ P1/P2 不纳入 P0 默认实现任务。后续如果时间充足，可以在 P0 
 
 ## 9. PLANv2 一致性检查表
 
-| PRDv2 / TECHv2 要求 | PLANv2 对应任务 | 状态 |
-|---|---|---|
-| 新增 `extension/tracebench/tracebench` | Task 1、2 | 已覆盖 |
-| `tracebench --help` | Task 2、14 | 已覆盖 |
-| `tracebench run` | Task 6、7、8、9、10 | 已覆盖 |
-| `tracebench report` | Task 11 | 已覆盖 |
-| `tracebench cleanup` | Task 12 | 已覆盖 |
-| CPU workload | Task 6 | 已覆盖 |
-| memory workload | Task 7 | 已覆盖 |
-| I/O workload | Task 8 | 已覆盖 |
-| cgroup v2 创建、加入、采样、清理 | Task 5、6、9、12 | 已覆盖 |
-| 默认 root 权限要求 | Task 5、6、12、14 | 已覆盖 |
-| `--no-cgroup` 低权限演示 | Task 3、9、14 | 已覆盖 |
-| PSI 采样 | Task 4、9 | 已覆盖 |
-| oslab_monitor 对照采样 | Task 10 | 已覆盖 |
-| `samples.csv` 稳定表头 | 第 6 章、Task 9、14 | 已覆盖 |
-| `command.txt` | Task 3 | 已覆盖 |
-| `environment.txt` | Task 3 | 已覆盖 |
-| `summary.txt` | Task 11 | 已覆盖 |
-| Markdown 报告 | Task 11 | 已覆盖 |
-| Bash 集成测试 | Task 14 | 已覆盖 |
-| demo scripts | Task 13 | 已覆盖 |
-| `.gitignore` 追加规则 | Task 1 | 已覆盖 |
-| README/FEATURES/DOC_AUDIT 同步 | Task 15 | 已覆盖 |
-| `TRACEBENCH_REPORT_TEMPLATE.md` | Task 15 | 已覆盖 |
-| P1 tracefs/bpftrace 可降级 | 第 8 章 | 已覆盖为预留 |
-| P2 sched_ext 挑战项 | 第 8 章 | 已覆盖为预留 |
-| 不修改基础四模块 | 第 1、4 章 | 已覆盖 |
-| 不自动加载 oslab_monitor | Task 10、14 | 已覆盖 |
+| PRDv2 / TECHv2 要求                    | PLANv2 对应任务     | 状态     |
+| ------------------------------------ | --------------- | ------ |
+| 新增 `extension/tracebench/tracebench` | Task 1、2        | 已覆盖    |
+| `tracebench --help`                  | Task 2、14       | 已覆盖    |
+| `tracebench run`                     | Task 6、7、8、9、10 | 已覆盖    |
+| `tracebench report`                  | Task 11         | 已覆盖    |
+| `tracebench cleanup`                 | Task 12         | 已覆盖    |
+| CPU workload                         | Task 6          | 已覆盖    |
+| memory workload                      | Task 7          | 已覆盖    |
+| I/O workload                         | Task 8          | 已覆盖    |
+| cgroup v2 创建、加入、采样、清理                | Task 5、6、9、12   | 已覆盖    |
+| 默认 root 权限要求                         | Task 5、6、12、14  | 已覆盖    |
+| `--no-cgroup` 低权限演示                  | Task 3、9、14     | 已覆盖    |
+| PSI 采样                               | Task 4、9        | 已覆盖    |
+| oslab_monitor 对照采样                   | Task 10         | 已覆盖    |
+| `samples.csv` 稳定表头                   | 第 6 章、Task 9、14 | 已覆盖    |
+| `command.txt`                        | Task 3          | 已覆盖    |
+| `environment.txt`                    | Task 3          | 已覆盖    |
+| `summary.txt`                        | Task 11         | 已覆盖    |
+| Markdown 报告                          | Task 11         | 已覆盖    |
+| Bash 集成测试                            | Task 14         | 已覆盖    |
+| demo scripts                         | Task 13         | 已覆盖    |
+| `.gitignore` 追加规则                    | Task 1          | 已覆盖    |
+| README/FEATURES/DOC_AUDIT 同步         | Task 15         | 已覆盖    |
+| `TRACEBENCH_REPORT_TEMPLATE.md`      | Task 15         | 已覆盖    |
+| P1 tracefs/bpftrace 可降级              | 第 8 章           | 已覆盖为预留 |
+| P2 sched_ext 挑战项                     | 第 8 章           | 已覆盖为预留 |
+| 不修改基础四模块                             | 第 1、4 章         | 已覆盖    |
+| 不自动加载 oslab_monitor                  | Task 10、14      | 已覆盖    |
 
 ## 10. 执行说明
 
@@ -2485,3 +2578,5 @@ sudo bash tests/test_tracebench.sh
 2. 会话内执行方式：在同一会话中按任务顺序实现，并在关键任务后提交检查点。
 
 默认推荐使用子任务执行方式，因为 TraceBench P0 涉及 cgroup v2、PSI、root 权限和 Ubuntu VM 验证，分任务执行更容易定位失败点。
+
+
