@@ -2,6 +2,8 @@
 
 本文档用于整理 OSLab TraceBench 课程设计最终报告。报告正文可按以下章节展开，并将命令输出或截图补充到对应位置。
 
+说明：本提纲面向当前已实现的基础四模块和 `oslab_monitor` 扩展模块。TraceBench v2 仍处于文档设计和实现计划阶段，v2 实验报告材料结构见 `docs/TRACEBENCH_REPORT_TEMPLATE.md`。
+
 ## 1. 项目基本信息
 
 - 项目名称：OSLab TraceBench 操作系统课程设计。
@@ -129,6 +131,7 @@
 - 总结基础四模块实现效果。
 - 总结扩展部分与真实 Linux 系统的联系。
 - 总结测试、文档和后续改进方向。
+- 如提及 v2，明确说明当前只完成 `docs/PRDv2.md`、`docs/TECHv2.md`、`docs/PLANv2.md` 和 `docs/TRACEBENCH_REPORT_TEMPLATE.md`，尚未实现 `extension/tracebench/`。
 
 ## 9. 参考资料
 

@@ -1,11 +1,12 @@
 # 功能清单
 
-本文档汇总 OSLab TraceBench 项目的用户可见功能。详细需求以 `docs/PRD.md` 为准，技术实现以 `docs/TECH.md` 为准。
+本文档汇总 OSLab TraceBench 项目的用户可见功能和 v2 规划功能。v1 已实现需求以 `docs/PRD.md` 为准，v1 技术实现以 `docs/TECH.md` 为准；v2 规划需求以 `docs/PRDv2.md` 为准，v2 技术方案和实现计划以 `docs/TECHv2.md`、`docs/PLANv2.md` 为准。
 
 当前验证状态：
 
 - 基础四模块已在 Ubuntu 24.04.2 LTS VM 中通过 `bash tests/run_all.sh`。
 - 扩展部分已在 Ubuntu 24.04.2 LTS VM 中通过 `cd extension/oslab_monitor && bash tests/test_oslab_monitor.sh`，覆盖内核模块编译、加载、读取、`oslabctl` 和卸载清理。
+- v2 TraceBench 当前处于文档设计和实现计划完成阶段；`extension/tracebench/` 尚未实现，未纳入已验证功能。
 
 ## 1. 基础必做部分
 
@@ -217,7 +218,56 @@ cat /proc/oslab_monitor/pid
 sudo ./oslabctl pid 1
 ```
 
-## 3. 非目标
+## 3. TraceBench v2 规划功能
+
+本章描述后续计划实现的 v2 功能，当前仓库尚无对应可执行代码。v2 规划不替代基础四模块和 `extension/oslab_monitor/`，而是在后续新增 `extension/tracebench/` 用户态实验工具。
+
+### 3.1 P0 规划功能
+
+目标可执行文件：
+
+```text
+extension/tracebench/tracebench
+```
+
+计划支持的用户可见命令：
+
+```bash
+./tracebench --help
+sudo ./tracebench run --profile cpu --duration 3 --sample-interval 1 --cpu-workers 2 --output output/test_cpu
+sudo ./tracebench run --profile memory --duration 3 --sample-interval 1 --memory-mb 64 --output output/test_memory
+sudo ./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 --output output/test_io
+./tracebench report --input output/test_cpu --output output/test_cpu/report.md
+sudo ./tracebench cleanup
+```
+
+计划功能：
+
+- 支持 CPU、memory、io 三类 workload。
+- 使用 cgroup v2 创建独立实验 cgroup，并采集 `cpu.stat`、`memory.current`、`memory.events`。
+- 读取 `/proc/pressure/cpu`、`/proc/pressure/memory`、`/proc/pressure/io`，采集 PSI 指标。
+- 如果 `/proc/oslab_monitor/overview` 存在，采集 `total_tasks`、`running_tasks`、`sleeping_tasks`、`mem_free_kb`、`mem_available_kb` 作为对照。
+- 每次实验生成 `command.txt`、`environment.txt`、`samples.csv`、`summary.txt`。
+- `tracebench report` 根据 `samples.csv` 生成 Markdown 报告。
+- `tracebench cleanup` 清理 TraceBench 命名空间内的 cgroup 和 I/O 临时文件，不删除 CSV、summary 或报告。
+- 提供 `extension/tracebench/tests/test_tracebench.sh` 作为 P0 Bash 集成测试。
+
+### 3.2 P1/P2 规划功能
+
+P1 可选增强：
+
+- tracefs 调度事件采样。
+- bpftrace 脚本采样。
+- 更丰富的 CSV 汇总统计。
+
+P2 挑战项：
+
+- sched_ext 调度器实验。
+- 默认 Linux 调度器与自定义调度策略对比。
+
+P1/P2 均不纳入 P0 默认验收，不支持的环境必须跳过并在报告中说明。
+
+## 4. 非目标
 
 本项目不包含：
 
@@ -227,3 +277,10 @@ sudo ./oslabctl pid 1
 - Linux 内核源码修改。
 - 生产级完整文件系统。
 - WSL2 作为扩展部分默认验收环境。
+
+v2 额外不包含：
+
+- 将 TraceBench 纳入根测试入口 `tests/run_all.sh`。
+- 让基础四模块依赖 `extension/tracebench/`。
+- 强依赖 `stress-ng`、`fio`、`perf` 或 `bpftrace` 作为 P0 运行前提。
+- 将 `tracefs`、`bpftrace` 或 `sched_ext` 作为 P0 默认验收要求。

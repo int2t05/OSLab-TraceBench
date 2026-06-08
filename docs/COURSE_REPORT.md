@@ -20,6 +20,8 @@
 
 项目实现时尽量保持每个模块独立，避免把不同实验内容混在一起。这样做的好处是验收和调试都比较清楚：调度模块只负责调度，内存模块只负责内存，文件系统模块只负责虚拟文件系统，同步模块只负责并发控制，扩展模块只负责真实 Linux 系统观测。
 
+补充说明：本报告正文对应当前已实现并验证的 v1 交付内容。TraceBench v2 已完成 `docs/PRDv2.md`、`docs/TECHv2.md`、`docs/PLANv2.md` 和 `docs/TRACEBENCH_REPORT_TEMPLATE.md`，但 `extension/tracebench/` 尚未实现，因此 v2 不计入本报告的已验证运行结果。
+
 ## 2. 运行环境
 
 基础部分在普通 Linux 命令行环境下运行，主要依赖如下：
@@ -73,9 +75,13 @@ OSLab-TraceBench/
 ├── docs/
 │   ├── COURSE_REPORT.md 课程设计报告
 │   ├── PRD.md           需求文档
+│   ├── PRDv2.md         TraceBench v2 需求文档
 │   ├── TECH.md          技术方案
+│   ├── TECHv2.md        TraceBench v2 技术方案
 │   ├── FEATURES.md      功能清单
 │   ├── PLAN.md          实现计划
+│   ├── PLANv2.md        TraceBench v2 实现计划
+│   ├── TRACEBENCH_REPORT_TEMPLATE.md TraceBench v2 报告模板
 │   └── DOC_AUDIT.md     文档一致性审计
 └── README.md            仓库运行说明
 ```

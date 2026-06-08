@@ -638,13 +638,19 @@ extension/tracebench/output/cpu/
 - 可复用当前 Ubuntu VM 验证流程。
 - 可在课程报告 v2 中引用当前 `docs/COURSE_REPORT.md` 的基础部分结果。
 
-### 15.3 新增文档建议
+### 15.3 v2 配套文档
 
-后续实现前建议新增：
-
+- `docs/PRDv2.md`：当前文档，定义 v2 需求、范围、验收标准和默认决策。
 - `docs/TECHv2.md`
 - `docs/PLANv2.md`
 - `docs/TRACEBENCH_REPORT_TEMPLATE.md`
+
+当前状态：
+
+- `docs/TECHv2.md` 已完成，用于指导 `extension/tracebench/` 的技术实现。
+- `docs/PLANv2.md` 已完成，用于指导后续要编写的代码文件、脚本和测试文件。
+- `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已提供，用于 v2 实现完成后的实验报告整理。
+- `extension/tracebench/` 尚未实现，不能将本文档中的 v2 命令视为当前可运行命令。
 
 ## 16. 非目标
 
