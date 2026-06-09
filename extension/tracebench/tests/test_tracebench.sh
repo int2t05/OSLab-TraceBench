@@ -8,6 +8,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+if [ "$(id -u)" -eq 0 ]; then
+    echo "running as root"
+else
+    echo "error: tracebench P0 integration test requires sudo/root" >&2
+    exit 1
+fi
+
+mount | grep -q cgroup2
+test -d /sys/fs/cgroup
+
 make clean
 make
 
@@ -67,5 +77,13 @@ grep -q "tracebench_version:" output/test_nocg/environment.txt
 grep -q "cpu_some_avg10" output/test_nocg/samples.csv
 grep -q "memory_some_avg10" output/test_nocg/samples.csv
 grep -q "io_some_avg10" output/test_nocg/samples.csv
+
+rm -rf output/test_cgroup
+./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_cgroup
+test -f output/test_cgroup/command.txt
+test -f output/test_cgroup/environment.txt
+test -f output/test_cgroup/samples.csv
+grep -q "cgroup_enabled" output/test_cgroup/samples.csv
+grep -q "cgroup_memory_current" output/test_cgroup/samples.csv
 
 printf 'tracebench cli tests passed\n'

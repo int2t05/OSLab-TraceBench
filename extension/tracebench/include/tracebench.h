@@ -145,10 +145,13 @@ int tb_generate_markdown_report(const TbConfig *config);
 
 int tb_mkdir_p(const char *path);
 int tb_join_path(char *dest, int dest_size, const char *dir, const char *name);
+int tb_parent_dir(char *dest, int dest_size, const char *path);
 int tb_read_text_file(const char *path, char *buffer, int buffer_size);
 int tb_write_text_file(const char *path, const char *text);
 int tb_path_readable(const char *path);
+int tb_remove_empty_dir(const char *path);
 long long tb_now_millis(void);
+int tb_is_root(void);
 void tb_print_error(const char *fmt, ...);
 int tb_parse_positive_int(const char *text, const char *name, int *value);
 int tb_is_valid_cgroup_name(const char *name);

@@ -157,6 +157,29 @@ int tb_join_path(char *dest, int dest_size, const char *dir, const char *name)
     return 0;
 }
 
+int tb_parent_dir(char *dest, int dest_size, const char *path)
+{
+    char *slash;
+
+    if (dest == NULL || path == NULL || dest_size <= 0 || (int)strlen(path) >= dest_size) {
+        tb_print_error("invalid parent path arguments");
+        return -1;
+    }
+
+    snprintf(dest, (size_t)dest_size, "%s", path);
+    slash = strrchr(dest, '/');
+    if (slash == NULL) {
+        snprintf(dest, (size_t)dest_size, ".");
+        return 0;
+    }
+    if (slash == dest) {
+        slash[1] = '\0';
+        return 0;
+    }
+    *slash = '\0';
+    return 0;
+}
+
 int tb_read_text_file(const char *path, char *buffer, int buffer_size)
 {
     FILE *file;
@@ -213,6 +236,14 @@ int tb_path_readable(const char *path)
     return access(path, R_OK) == 0;
 }
 
+int tb_remove_empty_dir(const char *path)
+{
+    if (rmdir(path) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
 long long tb_now_millis(void)
 {
     struct timespec ts;
@@ -222,4 +253,9 @@ long long tb_now_millis(void)
     }
 
     return (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+}
+
+int tb_is_root(void)
+{
+    return geteuid() == 0;
 }

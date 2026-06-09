@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 
 static void read_gcc_version(char *buffer, int size)
 {
@@ -49,10 +50,7 @@ static int append_text(char *buffer, int size, int *used, const char *fmt, ...)
 
 int tb_run_command(const TbConfig *config, int argc, char **argv)
 {
-    if (!config->no_cgroup) {
-        tb_print_error("cgroup mode is not implemented yet; use --no-cgroup for current low-permission output setup");
-        return 1;
-    }
+    TbCgroup cgroup;
 
     if (tb_mkdir_p(config->output_path) != 0) {
         return 1;
@@ -63,38 +61,56 @@ int tb_run_command(const TbConfig *config, int argc, char **argv)
     if (tb_write_environment_file(config) != 0) {
         return 1;
     }
+    if (tb_cgroup_init(config, &cgroup) != 0) {
+        return 1;
+    }
+    if (tb_cgroup_create(&cgroup) != 0) {
+        return 1;
+    }
+
     {
         char csv_path[TB_PATH_LEN];
         FILE *csv;
-        TbCgroup cgroup;
         TbSample sample;
 
-        memset(&cgroup, 0, sizeof(cgroup));
         memset(&sample, 0, sizeof(sample));
         sample.sample_index = 0;
         sample.elapsed_ms = 0;
         sample.profile = config->profile;
 
         if (tb_read_psi_snapshot(&sample.psi) != 0) {
+            tb_cgroup_remove_run(&cgroup);
+            return 1;
+        }
+        if (tb_cgroup_read_stats(&cgroup, &sample.cgroup) != 0) {
+            tb_cgroup_remove_run(&cgroup);
             return 1;
         }
         if (tb_join_path(csv_path, sizeof(csv_path), config->output_path, "samples.csv") != 0) {
+            tb_cgroup_remove_run(&cgroup);
             return 1;
         }
         csv = fopen(csv_path, "w");
         if (csv == NULL) {
             tb_print_error("failed to open %s for writing", csv_path);
+            tb_cgroup_remove_run(&cgroup);
             return 1;
         }
         if (tb_write_csv_header(csv) != 0 ||
             tb_write_csv_sample(csv, config, &cgroup, &sample) != 0) {
             fclose(csv);
+            tb_cgroup_remove_run(&cgroup);
             return 1;
         }
         if (fclose(csv) != 0) {
             tb_print_error("failed to close %s", csv_path);
+            tb_cgroup_remove_run(&cgroup);
             return 1;
         }
+    }
+
+    if (tb_cgroup_remove_run(&cgroup) != 0) {
+        return 1;
     }
 
     fprintf(stderr, "tracebench: sampling and workload are not implemented yet\n");

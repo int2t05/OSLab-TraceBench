@@ -130,12 +130,18 @@ int tb_write_csv_header(FILE *out)
 {
     fprintf(out,
             "sample_index,elapsed_ms,profile,"
+            "duration_sec,sample_interval_sec,run_id,cgroup_enabled,cgroup_path,"
             "cpu_some_avg10,cpu_some_avg60,cpu_some_avg300,cpu_some_total,"
             "cpu_full_avg10,cpu_full_avg60,cpu_full_avg300,cpu_full_total,"
             "memory_some_avg10,memory_some_avg60,memory_some_avg300,memory_some_total,"
             "memory_full_avg10,memory_full_avg60,memory_full_avg300,memory_full_total,"
             "io_some_avg10,io_some_avg60,io_some_avg300,io_some_total,"
-            "io_full_avg10,io_full_avg60,io_full_avg300,io_full_total\n");
+            "io_full_avg10,io_full_avg60,io_full_avg300,io_full_total,"
+            "cgroup_cpu_usage_usec,cgroup_cpu_user_usec,cgroup_cpu_system_usec,"
+            "cgroup_cpu_nr_periods,cgroup_cpu_nr_throttled,cgroup_cpu_throttled_usec,"
+            "cgroup_memory_current,cgroup_memory_events_low,cgroup_memory_events_high,"
+            "cgroup_memory_events_max,cgroup_memory_events_oom,"
+            "cgroup_memory_events_oom_kill,cgroup_memory_events_oom_group_kill\n");
     return ferror(out) ? -1 : 0;
 }
 
@@ -154,12 +160,15 @@ static void write_psi_line(FILE *out, const TbPsiLine *line)
 
 int tb_write_csv_sample(FILE *out, const TbConfig *config, const TbCgroup *cgroup, const TbSample *sample)
 {
-    (void)cgroup;
-
-    fprintf(out, "%d,%lld,%s,",
+    fprintf(out, "%d,%lld,%s,%d,%d,%s,%s,%s,",
             sample->sample_index,
             sample->elapsed_ms,
-            tb_profile_name(config->profile));
+            tb_profile_name(config->profile),
+            config->duration_sec,
+            config->sample_interval_sec,
+            cgroup->enabled ? cgroup->run_id : "NA",
+            cgroup->enabled ? "true" : "false",
+            cgroup->enabled ? cgroup->run_path : "NA");
     write_psi_line(out, &sample->psi.cpu.some);
     fprintf(out, ",");
     write_psi_line(out, &sample->psi.cpu.full);
@@ -171,6 +180,57 @@ int tb_write_csv_sample(FILE *out, const TbConfig *config, const TbCgroup *cgrou
     write_psi_line(out, &sample->psi.io.some);
     fprintf(out, ",");
     write_psi_line(out, &sample->psi.io.full);
+    if (sample->cgroup.enabled) {
+        fprintf(out, ",%llu,", sample->cgroup.cpu_usage_usec);
+        if (sample->cgroup.has_cpu_user_usec) {
+            fprintf(out, "%llu", sample->cgroup.cpu_user_usec);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",");
+        if (sample->cgroup.has_cpu_system_usec) {
+            fprintf(out, "%llu", sample->cgroup.cpu_system_usec);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",");
+        if (sample->cgroup.has_cpu_nr_periods) {
+            fprintf(out, "%llu", sample->cgroup.cpu_nr_periods);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",");
+        if (sample->cgroup.has_cpu_nr_throttled) {
+            fprintf(out, "%llu", sample->cgroup.cpu_nr_throttled);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",");
+        if (sample->cgroup.has_cpu_throttled_usec) {
+            fprintf(out, "%llu", sample->cgroup.cpu_throttled_usec);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",%llu,%llu,%llu,%llu,%llu,",
+                sample->cgroup.memory_current,
+                sample->cgroup.memory_events_low,
+                sample->cgroup.memory_events_high,
+                sample->cgroup.memory_events_max,
+                sample->cgroup.memory_events_oom);
+        if (sample->cgroup.has_oom_kill) {
+            fprintf(out, "%llu", sample->cgroup.memory_events_oom_kill);
+        } else {
+            fprintf(out, "NA");
+        }
+        fprintf(out, ",");
+        if (sample->cgroup.has_oom_group_kill) {
+            fprintf(out, "%llu", sample->cgroup.memory_events_oom_group_kill);
+        } else {
+            fprintf(out, "NA");
+        }
+    } else {
+        fprintf(out, ",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA");
+    }
     fprintf(out, "\n");
 
     return ferror(out) ? -1 : 0;
