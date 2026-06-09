@@ -58,6 +58,43 @@ check_error() {
     grep -q "error:" <<<"$output"
 }
 
+check_csv_shape() {
+    local path="$1"
+
+    awk -F',' 'NR==1 {n=NF} NR>1 && NF!=n {exit 1}' "$path"
+}
+
+check_csv_header() {
+    local path="$1"
+    local expected
+
+    expected="sample_index,elapsed_ms,profile,duration_sec,sample_interval_sec,run_id,cgroup_enabled,cgroup_path"
+    expected="$expected,cpu_some_avg10,cpu_some_avg60,cpu_some_avg300,cpu_some_total"
+    expected="$expected,cpu_full_avg10,cpu_full_avg60,cpu_full_avg300,cpu_full_total"
+    expected="$expected,memory_some_avg10,memory_some_avg60,memory_some_avg300,memory_some_total"
+    expected="$expected,memory_full_avg10,memory_full_avg60,memory_full_avg300,memory_full_total"
+    expected="$expected,io_some_avg10,io_some_avg60,io_some_avg300,io_some_total"
+    expected="$expected,io_full_avg10,io_full_avg60,io_full_avg300,io_full_total"
+    expected="$expected,cgroup_cpu_usage_usec,cgroup_cpu_user_usec,cgroup_cpu_system_usec"
+    expected="$expected,cgroup_cpu_nr_periods,cgroup_cpu_nr_throttled,cgroup_cpu_throttled_usec"
+    expected="$expected,cgroup_memory_current,cgroup_memory_events_low,cgroup_memory_events_high"
+    expected="$expected,cgroup_memory_events_max,cgroup_memory_events_oom"
+    expected="$expected,cgroup_memory_events_oom_kill,cgroup_memory_events_oom_group_kill"
+    expected="$expected,oslab_monitor_available,oslab_total_tasks,oslab_running_tasks"
+    expected="$expected,oslab_sleeping_tasks,oslab_mem_free_kb,oslab_mem_available_kb"
+
+    test "$(head -n 1 "$path")" = "$expected"
+}
+
+check_min_rows() {
+    local path="$1"
+    local min_rows="$2"
+    local rows
+
+    rows=$(($(wc -l < "$path") - 1))
+    test "$rows" -ge "$min_rows"
+}
+
 check_error "invalid profile" \
     ./tracebench run --profile bad --duration 1 --sample-interval 1 --output output/bad
 
@@ -74,7 +111,7 @@ check_error "invalid io size" \
     ./tracebench run --profile io --duration 1 --sample-interval 1 --io-mb 0 --output output/bad_io
 
 rm -rf output/test_nocg
-./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_nocg --no-cgroup
+./tracebench run --profile cpu --duration 2 --sample-interval 1 --cpu-workers 1 --output output/test_nocg --no-cgroup
 test -f output/test_nocg/command.txt
 test -f output/test_nocg/environment.txt
 test -f output/test_nocg/samples.csv
@@ -83,6 +120,11 @@ grep -q "tracebench_version:" output/test_nocg/environment.txt
 grep -q "cpu_some_avg10" output/test_nocg/samples.csv
 grep -q "memory_some_avg10" output/test_nocg/samples.csv
 grep -q "io_some_avg10" output/test_nocg/samples.csv
+grep -q "cgroup_enabled" output/test_nocg/samples.csv
+grep -q "false" output/test_nocg/samples.csv
+grep -q "NA" output/test_nocg/samples.csv
+check_csv_header output/test_nocg/samples.csv
+check_csv_shape output/test_nocg/samples.csv
 
 rm -rf output/test_cgroup
 ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_cgroup
@@ -112,6 +154,13 @@ test "$elapsed_sec" -ge 2
 test "$elapsed_sec" -le 6
 test -f output/test_cpu/command.txt
 test -f output/test_cpu/environment.txt
+test -f output/test_cpu/samples.csv
+grep -q "cpu_some_avg10" output/test_cpu/samples.csv
+grep -q "cgroup_cpu_usage_usec" output/test_cpu/samples.csv
+grep -q "oslab_monitor_available" output/test_cpu/samples.csv
+check_csv_header output/test_cpu/samples.csv
+check_min_rows output/test_cpu/samples.csv 3
+check_csv_shape output/test_cpu/samples.csv
 
 rm -rf output/test_memory
 start_sec="$(date +%s)"
@@ -122,6 +171,12 @@ test "$elapsed_sec" -ge 2
 test "$elapsed_sec" -le 6
 test -f output/test_memory/command.txt
 test -f output/test_memory/environment.txt
+test -f output/test_memory/samples.csv
+grep -q "memory_some_avg10" output/test_memory/samples.csv
+grep -q "cgroup_memory_current" output/test_memory/samples.csv
+check_csv_header output/test_memory/samples.csv
+check_min_rows output/test_memory/samples.csv 3
+check_csv_shape output/test_memory/samples.csv
 
 rm -rf output/test_io
 start_sec="$(date +%s)"
@@ -133,5 +188,10 @@ test "$elapsed_sec" -le 8
 test -f output/test_io/command.txt
 test -f output/test_io/environment.txt
 test ! -f output/test_io/tracebench_io.tmp
+test -f output/test_io/samples.csv
+grep -q "io_some_avg10" output/test_io/samples.csv
+check_csv_header output/test_io/samples.csv
+check_min_rows output/test_io/samples.csv 3
+check_csv_shape output/test_io/samples.csv
 
 printf 'tracebench cli tests passed\n'

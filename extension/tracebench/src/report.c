@@ -97,6 +97,9 @@ static int write_sample_row(FILE *csv, const TbConfig *config, const TbCgroup *c
     if (tb_cgroup_read_stats(cgroup, &sample.cgroup) != 0) {
         return -1;
     }
+    if (tb_read_oslab_snapshot(&sample.oslab) != 0) {
+        return -1;
+    }
     if (tb_write_csv_sample(csv, config, cgroup, &sample) != 0) {
         return -1;
     }

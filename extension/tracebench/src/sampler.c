@@ -121,9 +121,8 @@ int tb_read_psi_snapshot(TbPsiSnapshot *snapshot)
 
 int tb_read_oslab_snapshot(TbOslabSnapshot *snapshot)
 {
-    (void)snapshot;
-    tb_print_error("oslab_monitor sampling is not implemented yet");
-    return -1;
+    memset(snapshot, 0, sizeof(*snapshot));
+    return 0;
 }
 
 int tb_write_csv_header(FILE *out)
@@ -141,7 +140,9 @@ int tb_write_csv_header(FILE *out)
             "cgroup_cpu_nr_periods,cgroup_cpu_nr_throttled,cgroup_cpu_throttled_usec,"
             "cgroup_memory_current,cgroup_memory_events_low,cgroup_memory_events_high,"
             "cgroup_memory_events_max,cgroup_memory_events_oom,"
-            "cgroup_memory_events_oom_kill,cgroup_memory_events_oom_group_kill\n");
+            "cgroup_memory_events_oom_kill,cgroup_memory_events_oom_group_kill,"
+            "oslab_monitor_available,oslab_total_tasks,oslab_running_tasks,"
+            "oslab_sleeping_tasks,oslab_mem_free_kb,oslab_mem_available_kb\n");
     return ferror(out) ? -1 : 0;
 }
 
@@ -155,6 +156,15 @@ static void write_psi_line(FILE *out, const TbPsiLine *line)
                 line->total);
     } else {
         fprintf(out, "NA,NA,NA,NA");
+    }
+}
+
+static void write_optional_ull(FILE *out, int present, unsigned long long value)
+{
+    if (present) {
+        fprintf(out, "%llu", value);
+    } else {
+        fprintf(out, "NA");
     }
 }
 
@@ -231,6 +241,16 @@ int tb_write_csv_sample(FILE *out, const TbConfig *config, const TbCgroup *cgrou
     } else {
         fprintf(out, ",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA");
     }
+    fprintf(out, ",%s,", sample->oslab.available ? "true" : "false");
+    write_optional_ull(out, sample->oslab.total_tasks_present, sample->oslab.total_tasks);
+    fprintf(out, ",");
+    write_optional_ull(out, sample->oslab.running_tasks_present, sample->oslab.running_tasks);
+    fprintf(out, ",");
+    write_optional_ull(out, sample->oslab.sleeping_tasks_present, sample->oslab.sleeping_tasks);
+    fprintf(out, ",");
+    write_optional_ull(out, sample->oslab.mem_free_kb_present, sample->oslab.mem_free_kb);
+    fprintf(out, ",");
+    write_optional_ull(out, sample->oslab.mem_available_kb_present, sample->oslab.mem_available_kb);
     fprintf(out, "\n");
 
     return ferror(out) ? -1 : 0;
