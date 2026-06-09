@@ -7,6 +7,7 @@
 #include "tracebench.h"
 
 #include <errno.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -290,9 +291,167 @@ int tb_cgroup_remove_run(const TbCgroup *cgroup)
     return 0;
 }
 
+static int cgroup_has_processes(const char *path)
+{
+    char procs_path[TB_PATH_LEN];
+    char text[TB_VALUE_LEN];
+
+    if (tb_join_path(procs_path, sizeof(procs_path), path, "cgroup.procs") != 0) {
+        return 1;
+    }
+    if (tb_read_text_file(procs_path, text, sizeof(text)) != 0) {
+        return 1;
+    }
+
+    return text[0] != '\0';
+}
+
+static int cleanup_cgroup_children(const char *path)
+{
+    DIR *dir;
+    struct dirent *entry;
+    int result = 0;
+
+    dir = opendir(path);
+    if (dir == NULL) {
+        if (errno == ENOENT) {
+            return 0;
+        }
+        tb_print_error("failed to open cgroup directory %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        char child_path[TB_PATH_LEN];
+        struct stat st;
+
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        if (path_join_raw(child_path, sizeof(child_path), path, entry->d_name) != 0) {
+            result = -1;
+            continue;
+        }
+        if (stat(child_path, &st) != 0 || !S_ISDIR(st.st_mode)) {
+            continue;
+        }
+        if (cleanup_cgroup_children(child_path) != 0) {
+            result = -1;
+        }
+        if (cgroup_has_processes(child_path)) {
+            fprintf(stderr, "warning: cgroup still has processes, not removing: %s\n", child_path);
+            result = -1;
+            continue;
+        }
+        if (tb_remove_empty_dir(child_path) != 0 && errno != ENOENT) {
+            fprintf(stderr, "warning: could not remove cgroup %s: %s\n", child_path, strerror(errno));
+            result = -1;
+        }
+    }
+
+    closedir(dir);
+    return result;
+}
+
+static int cleanup_cgroup_root(const char *cgroup_name)
+{
+    char root_path[TB_PATH_LEN];
+    struct stat st;
+    int result = 0;
+
+    if (path_join_raw(root_path, sizeof(root_path), "/sys/fs/cgroup", cgroup_name) != 0) {
+        return -1;
+    }
+    if (stat(root_path, &st) != 0) {
+        if (errno == ENOENT) {
+            return 0;
+        }
+        tb_print_error("failed to stat cgroup %s: %s", root_path, strerror(errno));
+        return -1;
+    }
+    if (!S_ISDIR(st.st_mode)) {
+        tb_print_error("cgroup path is not a directory: %s", root_path);
+        return -1;
+    }
+
+    if (cleanup_cgroup_children(root_path) != 0) {
+        result = -1;
+    }
+    if (cgroup_has_processes(root_path)) {
+        fprintf(stderr, "warning: cgroup still has processes, not removing: %s\n", root_path);
+        return -1;
+    }
+    if (tb_remove_empty_dir(root_path) != 0 && errno != ENOENT) {
+        fprintf(stderr, "warning: could not remove cgroup %s: %s\n", root_path, strerror(errno));
+        result = -1;
+    }
+
+    return result;
+}
+
+static int cleanup_io_temp_files(void)
+{
+    DIR *dir;
+    struct dirent *entry;
+    int result = 0;
+
+    dir = opendir("output");
+    if (dir == NULL) {
+        if (errno == ENOENT) {
+            return 0;
+        }
+        tb_print_error("failed to open output directory: %s", strerror(errno));
+        return -1;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        char temp_path[TB_PATH_LEN];
+        char child_path[TB_PATH_LEN];
+        struct stat st;
+
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        if (path_join_raw(child_path, sizeof(child_path), "output", entry->d_name) != 0) {
+            result = -1;
+            continue;
+        }
+        if (stat(child_path, &st) != 0 || !S_ISDIR(st.st_mode)) {
+            continue;
+        }
+        if (path_join_raw(temp_path, sizeof(temp_path), child_path, "tracebench_io.tmp") != 0) {
+            result = -1;
+            continue;
+        }
+        if (unlink(temp_path) != 0 && errno != ENOENT) {
+            tb_print_error("failed to remove %s: %s", temp_path, strerror(errno));
+            result = -1;
+        }
+    }
+
+    closedir(dir);
+    return result;
+}
+
 int tb_cgroup_cleanup_all(const char *cgroup_name)
 {
-    (void)cgroup_name;
-    tb_print_error("cleanup is not implemented yet");
-    return -1;
+    int result = 0;
+
+    if (!tb_is_root()) {
+        tb_print_error("cleanup requires root; rerun with sudo");
+        return -1;
+    }
+    if (!tb_is_valid_cgroup_name(cgroup_name)) {
+        tb_print_error("invalid cgroup name for cleanup");
+        return -1;
+    }
+
+    if (cleanup_cgroup_root(cgroup_name) != 0) {
+        result = -1;
+    }
+    if (cleanup_io_temp_files() != 0) {
+        result = -1;
+    }
+
+    return result;
 }

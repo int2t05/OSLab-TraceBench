@@ -157,6 +157,17 @@ else
     printf 'warning: skipping non-root cgroup failure check because SUDO_USER is unavailable\n' >&2
 fi
 
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    set +e
+    sudo -u "$SUDO_USER" ./tracebench cleanup >output/cleanup_non_root.out 2>&1
+    status=$?
+    set -e
+    test "$status" -ne 0
+    grep -q "error:" output/cleanup_non_root.out
+else
+    printf 'warning: skipping non-root cleanup failure check because SUDO_USER is unavailable\n' >&2
+fi
+
 rm -rf output/test_cpu
 start_sec="$(date +%s)"
 ./tracebench run --profile cpu --duration 3 --sample-interval 1 --cpu-workers 2 --output output/test_cpu
@@ -219,5 +230,11 @@ grep -q "io_some_avg10" output/test_io/samples.csv
 check_csv_header output/test_io/samples.csv
 check_min_rows output/test_io/samples.csv 3
 check_csv_shape output/test_io/samples.csv
+
+./tracebench cleanup
+test -f output/test_cpu/samples.csv
+test -f output/test_cpu/summary.txt
+test -f output/test_cpu/report.md
+test ! -f output/test_io/tracebench_io.tmp
 
 printf 'tracebench cli tests passed\n'
