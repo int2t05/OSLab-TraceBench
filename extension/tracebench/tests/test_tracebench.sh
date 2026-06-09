@@ -21,6 +21,11 @@ test -d /sys/fs/cgroup
 make clean
 make
 
+bash -n scripts/run_cpu_demo.sh
+bash -n scripts/run_memory_demo.sh
+bash -n scripts/run_io_demo.sh
+bash -n scripts/cleanup.sh
+
 require_readable() {
     local path="$1"
 
