@@ -6,6 +6,7 @@
 
 #include "tracebench.h"
 
+#include <stdint.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <time.h>
@@ -74,6 +75,58 @@ static int run_cpu_workload(const TbConfig *config)
     return started == config->cpu_workers ? 0 : -1;
 }
 
+static void workload_sleep_millis(long millis)
+{
+    struct timespec request;
+
+    request.tv_sec = millis / 1000L;
+    request.tv_nsec = (millis % 1000L) * 1000000L;
+    while (nanosleep(&request, &request) != 0) {
+    }
+}
+
+/*
+ * memory workload 先按页写入整块内存，再周期性重新触碰。
+ * 这样做是为了让 malloc 得到的虚拟地址真正映射到物理页，同时避免一次分配后长期空转导致指标不明显。
+ */
+static int run_memory_workload(const TbConfig *config)
+{
+    unsigned char *buffer;
+    long page_size;
+    size_t total_bytes;
+    long long end_ms;
+    unsigned char value = 1;
+
+    if ((size_t)config->memory_mb > (SIZE_MAX / (1024U * 1024U))) {
+        tb_print_error("--memory-mb is too large");
+        return -1;
+    }
+    total_bytes = (size_t)config->memory_mb * 1024U * 1024U;
+    buffer = malloc(total_bytes);
+    if (buffer == NULL) {
+        tb_print_error("failed to allocate memory workload buffer");
+        return -1;
+    }
+
+    page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        page_size = 4096;
+    }
+
+    end_ms = tb_now_millis() + (long long)config->duration_sec * 1000LL;
+    while (tb_now_millis() < end_ms) {
+        for (size_t offset = 0; offset < total_bytes; offset += (size_t)page_size) {
+            buffer[offset] = value;
+        }
+        buffer[total_bytes - 1] = value;
+        value++;
+        workload_sleep_millis(50);
+    }
+
+    free(buffer);
+    return 0;
+}
+
 int tb_run_workload_child(const TbConfig *config, int start_fd)
 {
     if (wait_for_start_signal(start_fd) != 0) {
@@ -82,6 +135,9 @@ int tb_run_workload_child(const TbConfig *config, int start_fd)
 
     if (config->profile == TB_PROFILE_CPU) {
         return run_cpu_workload(config);
+    }
+    if (config->profile == TB_PROFILE_MEMORY) {
+        return run_memory_workload(config);
     }
 
     tb_print_error("selected workload is not implemented yet");
