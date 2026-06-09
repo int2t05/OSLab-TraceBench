@@ -1,6 +1,6 @@
 # OSLab TraceBench v2 实验报告模板
 
-本文档用于 TraceBench v2 实现完成后整理资源压力实验报告。当前模板只定义报告结构和记录口径；`extension/tracebench/` 尚未实现时，不应把本文档视为已生成实验结果。
+本文档用于整理 TraceBench v2 资源压力实验报告。P0 已实现 `extension/tracebench/tracebench`，可通过 `tracebench run` 生成采样数据，并通过 `tracebench report` 生成与本模板结构一致的 Markdown 报告。
 
 报告数据来源：
 

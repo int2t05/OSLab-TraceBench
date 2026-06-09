@@ -10,6 +10,8 @@
 - 新增 v2 技术方案 `docs/TECHv2.md`。
 - 新增 v2 实现计划 `docs/PLANv2.md`。
 - 新增 v2 报告模板 `docs/TRACEBENCH_REPORT_TEMPLATE.md`。
+- 新增并实现 `extension/tracebench/` TraceBench v2 P0 用户态实验工具。
+- TraceBench v2 P0 已在 Ubuntu 24.04.2 LTS VM 中通过 `sudo bash tests/test_tracebench.sh`。
 
 ## 1. 审计范围
 
@@ -50,7 +52,7 @@
 | v2 技术方案 | 已撰写实现级方案 | `docs/TECHv2.md` |
 | v2 实现计划 | 已撰写任务、文件和测试计划 | `docs/PLANv2.md` |
 | v2 报告模板 | 已创建报告结构模板 | `docs/TRACEBENCH_REPORT_TEMPLATE.md` |
-| v2 TraceBench 实现 | 尚未实现 | `extension/tracebench/` 当前不存在 |
+| v2 TraceBench 实现 | 已实现并通过 Ubuntu VM 集成测试 | `extension/tracebench/`，`sudo bash extension/tracebench/tests/test_tracebench.sh` |
 | 仓库展示 README | 已简化为运行说明入口 | `README.md` |
 
 ## 3. 新增源码和测试目录
@@ -87,6 +89,16 @@
 - `extension/oslab_monitor/scripts/unload.sh`
 - `extension/oslab_monitor/scripts/demo.sh`
 - `extension/oslab_monitor/tests/test_oslab_monitor.sh`
+- `extension/tracebench/Makefile`
+- `extension/tracebench/include/tracebench.h`
+- `extension/tracebench/src/`
+- `extension/tracebench/scripts/run_cpu_demo.sh`
+- `extension/tracebench/scripts/run_memory_demo.sh`
+- `extension/tracebench/scripts/run_io_demo.sh`
+- `extension/tracebench/scripts/cleanup.sh`
+- `extension/tracebench/tests/test_tracebench.sh`
+- `extension/tracebench/bpftrace/README.md`
+- `extension/tracebench/output/.gitkeep`
 
 根测试：
 
@@ -120,9 +132,9 @@
 | 课程报告 | `docs/COURSE_REPORT.md` 覆盖项目概述、环境、设计、测试、问题和总结 | 一致 |
 | v2 需求文档 | `docs/PRDv2.md` 明确 TraceBench 的 P0/P1/P2 需求、命令、输出和验收标准 | 一致 |
 | v2 技术方案 | `docs/TECHv2.md` 明确 TraceBench P0 模块边界、数据结构、CSV 字段、权限和测试策略 | 一致 |
-| v2 实现计划 | `docs/PLANv2.md` 只说明后续要编写的文件、脚本、测试和验证顺序，不包含实际代码 | 一致 |
+| v2 实现计划 | `docs/PLANv2.md` 说明已执行的文件、脚本、测试和验证顺序 | 一致 |
 | v2 报告模板 | `docs/TRACEBENCH_REPORT_TEMPLATE.md` 覆盖实验配置、环境、采样、PSI、cgroup、oslab_monitor 和局限性 | 一致 |
-| v2 文档与代码状态 | v2 文档描述的是后续实现目标；`extension/tracebench/` 当前不存在 | 一致 |
+| v2 文档与代码状态 | v2 P0 文档、代码、测试脚本和报告模板均已落地 | 一致 |
 | README 展示面 | README 保留项目简介、环境、运行命令和报告入口，去除长篇设计字段 | 一致 |
 
 ## 5. 已执行验证
@@ -166,18 +178,19 @@ Ubuntu VM 已执行并通过：
 bash tests/run_all.sh
 cd extension/oslab_monitor
 bash tests/test_oslab_monitor.sh
+cd extension/tracebench
+sudo bash tests/test_tracebench.sh
 ```
 
 v2 文档审计已执行以下检查：
 
 - 检查未决占位词和过时 `/proc` 权限表述。
-- 检查 `TECHv2`、`PLANv2`、`TRACEBENCH_REPORT_TEMPLATE`、`extension/tracebench` 和 v2 未实现状态引用。
+- 检查 `TECHv2`、`PLANv2`、`TRACEBENCH_REPORT_TEMPLATE`、`extension/tracebench` 和 v2 实现状态引用。
 
 说明：
 
 - 本次审计为文档同步，不运行 v1 代码测试。
-- v2 尚未实现 `extension/tracebench/`，因此没有可运行的 `tracebench` P0 集成测试结果。
-- `tests/run_all.sh` 继续只运行基础四模块，不纳入 TraceBench，因为 TraceBench 计划需要 Ubuntu VM、root 权限、cgroup v2 和 `/proc/pressure/*`。
+- `tests/run_all.sh` 继续只运行基础四模块，不纳入 TraceBench，因为 TraceBench 需要 Ubuntu VM、root 权限、cgroup v2 和 `/proc/pressure/*`。
 
 扩展集成测试覆盖：
 
@@ -207,11 +220,11 @@ bash tests/test_oslab_monitor.sh
 - `docs/COURSE_REPORT.md` 已包含课程报告正文。
 - 基础四模块测试结果已在报告中以文本形式记录。
 - Ubuntu VM 中扩展模块编译、加载、读取 `/proc`、`oslabctl`、卸载测试结果已在报告中以文本形式记录。
-- `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已提供 v2 实现完成后的实验报告模板。
+- `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已提供 v2 实验报告模板。
 - 若课程提交要求必须使用截图，可按 README 中命令重新运行并截图。
 
 ## 7. 审计结论
 
 基础部分代码、测试和文档当前一致。扩展部分 `oslab_monitor` 源码、用户态工具、脚本和测试脚本已按文档实现，并已在 Ubuntu 24.04.2 LTS VM 默认内核中通过完整集成测试。当前 README 已调整为简洁运行入口，详细课程设计报告已写入 `docs/COURSE_REPORT.md`。
 
-v2 当前是文档完成、实现未开始的状态：`docs/PRDv2.md`、`docs/TECHv2.md`、`docs/PLANv2.md` 和 `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已完成并互相引用一致；`extension/tracebench/` 尚未存在，不能宣称 TraceBench P0 已实现或已通过集成测试。
+v2 TraceBench P0 当前已实现：`extension/tracebench/` 包含 CLI、workload、PSI/cgroup/oslab_monitor 采样、CSV、summary、Markdown report、cleanup、demo scripts 和 P0 集成测试；`docs/PRDv2.md`、`docs/TECHv2.md`、`docs/PLANv2.md`、`docs/TRACEBENCH_REPORT_TEMPLATE.md`、`README.md` 和 `docs/FEATURES.md` 已同步为当前实现状态。

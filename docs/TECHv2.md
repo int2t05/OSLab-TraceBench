@@ -251,7 +251,7 @@ graph TD
 当前状态：
 
 - `docs/TECHv2.md`、`docs/PLANv2.md` 和 `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已作为 v2 配套文档存在。
-- `extension/tracebench/` 是后续实现目标，当前仓库尚未包含可运行的 TraceBench 代码。
+- `extension/tracebench/` 已实现 P0 用户态 TraceBench 工具，并在 Ubuntu VM 中通过 P0 集成测试。
 
 可复用内容：
 

@@ -1,12 +1,12 @@
 # 功能清单
 
-本文档汇总 OSLab TraceBench 项目的用户可见功能和 v2 规划功能。v1 已实现需求以 `docs/PRD.md` 为准，v1 技术实现以 `docs/TECH.md` 为准；v2 规划需求以 `docs/PRDv2.md` 为准，v2 技术方案和实现计划以 `docs/TECHv2.md`、`docs/PLANv2.md` 为准。
+本文档汇总 OSLab TraceBench 项目的用户可见功能。v1 需求以 `docs/PRD.md` 为准，v1 技术实现以 `docs/TECH.md` 为准；v2 TraceBench 需求以 `docs/PRDv2.md` 为准，v2 技术方案和实现计划以 `docs/TECHv2.md`、`docs/PLANv2.md` 为准。
 
 当前验证状态：
 
 - 基础四模块已在 Ubuntu 24.04.2 LTS VM 中通过 `bash tests/run_all.sh`。
 - 扩展部分已在 Ubuntu 24.04.2 LTS VM 中通过 `cd extension/oslab_monitor && bash tests/test_oslab_monitor.sh`，覆盖内核模块编译、加载、读取、`oslabctl` 和卸载清理。
-- v2 TraceBench 当前处于文档设计和实现计划完成阶段；`extension/tracebench/` 尚未实现，未纳入已验证功能。
+- v2 TraceBench P0 已在 Ubuntu 24.04.2 LTS VM 中通过 `cd extension/tracebench && sudo bash tests/test_tracebench.sh`，覆盖 CPU、memory、io workload、PSI、cgroup v2、CSV、summary、Markdown report 和 cleanup。
 
 ## 1. 基础必做部分
 
@@ -218,19 +218,19 @@ cat /proc/oslab_monitor/pid
 sudo ./oslabctl pid 1
 ```
 
-## 3. TraceBench v2 规划功能
+## 3. TraceBench v2 P0
 
-本章描述后续计划实现的 v2 功能，当前仓库尚无对应可执行代码。v2 规划不替代基础四模块和 `extension/oslab_monitor/`，而是在后续新增 `extension/tracebench/` 用户态实验工具。
+TraceBench v2 位于 `extension/tracebench/`，是新增用户态实验工具，不替代基础四模块和 `extension/oslab_monitor/`。
 
-### 3.1 P0 规划功能
+### 3.1 命令入口
 
-目标可执行文件：
+可执行文件：
 
 ```text
 extension/tracebench/tracebench
 ```
 
-计划支持的用户可见命令：
+用户可见命令：
 
 ```bash
 ./tracebench --help
@@ -241,12 +241,15 @@ sudo ./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 -
 sudo ./tracebench cleanup
 ```
 
-计划功能：
+功能：
 
-- 支持 CPU、memory、io 三类 workload。
-- 使用 cgroup v2 创建独立实验 cgroup，并采集 `cpu.stat`、`memory.current`、`memory.events`。
+- `tracebench --help` 输出 `run`、`report`、`cleanup`。
+- `tracebench run --profile cpu` 启动 CPU 密集型 workload。
+- `tracebench run --profile memory` 启动内存分配和周期触碰 workload。
+- `tracebench run --profile io` 写入并 `fsync` 固定临时文件，正常结束后删除临时文件。
+- 默认使用 cgroup v2 创建独立实验 cgroup，将 workload 子进程加入 cgroup，并采集 `cpu.stat`、`memory.current`、`memory.events`。
 - 读取 `/proc/pressure/cpu`、`/proc/pressure/memory`、`/proc/pressure/io`，采集 PSI 指标。
-- 如果 `/proc/oslab_monitor/overview` 存在，采集 `total_tasks`、`running_tasks`、`sleeping_tasks`、`mem_free_kb`、`mem_available_kb` 作为对照。
+- 默认可选采集 `/proc/oslab_monitor/overview`；指定 `--with-oslab-monitor` 时强制该接口存在且可读。
 - 每次实验生成 `command.txt`、`environment.txt`、`samples.csv`、`summary.txt`。
 - `tracebench report` 根据 `samples.csv` 生成 Markdown 报告。
 - `tracebench cleanup` 清理 TraceBench 命名空间内的 cgroup 和 I/O 临时文件，不删除 CSV、summary 或报告。

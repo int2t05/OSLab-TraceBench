@@ -647,10 +647,10 @@ extension/tracebench/output/cpu/
 
 当前状态：
 
-- `docs/TECHv2.md` 已完成，用于指导 `extension/tracebench/` 的技术实现。
-- `docs/PLANv2.md` 已完成，用于指导后续要编写的代码文件、脚本和测试文件。
-- `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已提供，用于 v2 实现完成后的实验报告整理。
-- `extension/tracebench/` 尚未实现，不能将本文档中的 v2 命令视为当前可运行命令。
+- `docs/TECHv2.md` 已完成，用于说明 `extension/tracebench/` 的技术实现。
+- `docs/PLANv2.md` 已完成，用于记录代码文件、脚本、测试文件和验证顺序。
+- `docs/TRACEBENCH_REPORT_TEMPLATE.md` 已提供，用于 v2 实验报告整理。
+- `extension/tracebench/` 已实现 P0，可在 Ubuntu VM 中运行本文档列出的 P0 命令。
 
 ## 16. 非目标
 
