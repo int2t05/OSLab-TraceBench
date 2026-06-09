@@ -239,6 +239,10 @@ int tb_run_command(const TbConfig *config, int argc, char **argv)
     struct sigaction old_term;
     int result = 1;
 
+    if (config->with_oslab_monitor && !tb_path_readable("/proc/oslab_monitor/overview")) {
+        tb_print_error("--with-oslab-monitor requires readable /proc/oslab_monitor/overview");
+        return 1;
+    }
     if (tb_mkdir_p(config->output_path) != 0) {
         return 1;
     }

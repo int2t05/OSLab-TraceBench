@@ -33,6 +33,10 @@ require_readable() {
 require_readable /proc/pressure/cpu
 require_readable /proc/pressure/memory
 require_readable /proc/pressure/io
+oslab_monitor_present=0
+if [ -r /proc/oslab_monitor/overview ]; then
+    oslab_monitor_present=1
+fi
 
 help_output="$(./tracebench --help)"
 grep -q "run" <<<"$help_output"
@@ -110,6 +114,11 @@ check_error "invalid memory size" \
 check_error "invalid io size" \
     ./tracebench run --profile io --duration 1 --sample-interval 1 --io-mb 0 --output output/bad_io
 
+if [ "$oslab_monitor_present" -eq 0 ]; then
+    check_error "with oslab_monitor but module missing" \
+        ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/with_om --with-oslab-monitor
+fi
+
 rm -rf output/test_nocg
 ./tracebench run --profile cpu --duration 2 --sample-interval 1 --cpu-workers 1 --output output/test_nocg --no-cgroup
 test -f output/test_nocg/command.txt
@@ -158,6 +167,11 @@ test -f output/test_cpu/samples.csv
 grep -q "cpu_some_avg10" output/test_cpu/samples.csv
 grep -q "cgroup_cpu_usage_usec" output/test_cpu/samples.csv
 grep -q "oslab_monitor_available" output/test_cpu/samples.csv
+if [ "$oslab_monitor_present" -eq 0 ]; then
+    grep -q "false" output/test_cpu/samples.csv
+else
+    grep -q "oslab_total_tasks" output/test_cpu/samples.csv
+fi
 check_csv_header output/test_cpu/samples.csv
 check_min_rows output/test_cpu/samples.csv 3
 check_csv_shape output/test_cpu/samples.csv

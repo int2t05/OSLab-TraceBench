@@ -102,6 +102,28 @@ static int read_psi_resource(const char *path, TbPsiResource *resource)
     return parse_psi_text(text, resource);
 }
 
+static void parse_oslab_line(TbOslabSnapshot *snapshot, const char *line)
+{
+    unsigned long long value;
+
+    if (sscanf(line, "total_tasks: %llu", &value) == 1) {
+        snapshot->total_tasks = value;
+        snapshot->total_tasks_present = 1;
+    } else if (sscanf(line, "running_tasks: %llu", &value) == 1) {
+        snapshot->running_tasks = value;
+        snapshot->running_tasks_present = 1;
+    } else if (sscanf(line, "sleeping_tasks: %llu", &value) == 1) {
+        snapshot->sleeping_tasks = value;
+        snapshot->sleeping_tasks_present = 1;
+    } else if (sscanf(line, "mem_free_kb: %llu", &value) == 1) {
+        snapshot->mem_free_kb = value;
+        snapshot->mem_free_kb_present = 1;
+    } else if (sscanf(line, "mem_available_kb: %llu", &value) == 1) {
+        snapshot->mem_available_kb = value;
+        snapshot->mem_available_kb_present = 1;
+    }
+}
+
 int tb_read_psi_snapshot(TbPsiSnapshot *snapshot)
 {
     memset(snapshot, 0, sizeof(*snapshot));
@@ -121,7 +143,25 @@ int tb_read_psi_snapshot(TbPsiSnapshot *snapshot)
 
 int tb_read_oslab_snapshot(TbOslabSnapshot *snapshot)
 {
+    char text[TB_LINE_LEN * 4];
+    char *line;
+    char *saveptr = NULL;
+
     memset(snapshot, 0, sizeof(*snapshot));
+    if (!tb_path_readable("/proc/oslab_monitor/overview")) {
+        return 0;
+    }
+    if (tb_read_text_file("/proc/oslab_monitor/overview", text, sizeof(text)) != 0) {
+        return 0;
+    }
+
+    snapshot->available = 1;
+    line = strtok_r(text, "\n", &saveptr);
+    while (line != NULL) {
+        parse_oslab_line(snapshot, line);
+        line = strtok_r(NULL, "\n", &saveptr);
+    }
+
     return 0;
 }
 
