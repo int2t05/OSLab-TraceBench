@@ -11,6 +11,17 @@
 
 扩展部分实现 Linux 内核模块 `oslab_monitor.ko`，通过 `/proc/oslab_monitor/` 输出系统概览、进程列表和指定 PID 信息，并提供用户态工具 `oslabctl`。
 
+## 实际使用场景
+
+本项目面向操作系统课程设计验收和实验报告整理，典型使用场景如下：
+
+- 课程验收人员拉取仓库后，先运行 `bash tests/run_all.sh`，快速确认调度、内存、同步和文件系统四个基础模块都能编译、运行并通过固定样例测试。
+- 学生编写基础实验报告时，分别运行 `scheduler`、`memory`、`sync`、`filesystem`，截取算法执行序列、分区或页框变化、线程同步日志和虚拟文件系统状态，用于解释 OS 基础机制。
+- 学生演示 Linux 内核与系统编程扩展时，在 Ubuntu VM 中加载 `oslab_monitor.ko`，读取 `/proc/oslab_monitor/overview`、`tasks`、`pid`，把真实 Linux 系统中的进程状态、调度字段和内存字段与课堂概念对应起来。
+- 学生或助教需要简化 `/proc` 操作时，使用 `oslabctl overview`、`oslabctl tasks`、`sudo oslabctl pid 1` 获取与直接 `cat /proc/oslab_monitor/*` 一致的输出。
+- 学生做 TraceBench v2 资源压力实验时，在 Ubuntu VM 中运行 CPU、memory、io 三类 profile，采集 PSI、cgroup v2 和可选 `oslab_monitor` 对照指标，生成 `samples.csv`、`summary.txt` 和 Markdown 报告。
+- 课程提交前，使用 README 中的基础测试、扩展测试和 TraceBench P0 测试命令复现实验结果，确认报告中的环境、命令和输出材料可重新生成。
+
 ## TraceBench v2
 
 TraceBench v2 是新增扩展模块，不替代基础四模块和 `extension/oslab_monitor/`。P0 已实现 `extension/tracebench/tracebench`，可在 Ubuntu VM 中运行 CPU、memory、io 压力实验，采集 PSI、cgroup v2 和可选 `/proc/oslab_monitor/overview` 对照指标，输出 `samples.csv`、`summary.txt` 和 Markdown 报告。
