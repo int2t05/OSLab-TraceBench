@@ -119,6 +119,9 @@ if [ "$oslab_monitor_present" -eq 0 ]; then
         ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/with_om --with-oslab-monitor
 fi
 
+check_error "report missing samples" \
+    ./tracebench report --input output/missing_report_input --output output/missing_report.md
+
 rm -rf output/test_nocg
 ./tracebench run --profile cpu --duration 2 --sample-interval 1 --cpu-workers 1 --output output/test_nocg --no-cgroup
 test -f output/test_nocg/command.txt
@@ -175,6 +178,15 @@ fi
 check_csv_header output/test_cpu/samples.csv
 check_min_rows output/test_cpu/samples.csv 3
 check_csv_shape output/test_cpu/samples.csv
+test -f output/test_cpu/summary.txt
+grep -q "profile" output/test_cpu/summary.txt
+grep -q "samples.csv" output/test_cpu/summary.txt
+./tracebench report --input output/test_cpu --output output/test_cpu/report.md
+test -f output/test_cpu/report.md
+grep -q "PSI" output/test_cpu/report.md
+grep -q "cgroup" output/test_cpu/report.md
+grep -q "oslab_monitor" output/test_cpu/report.md
+grep -q "samples.csv" output/test_cpu/report.md
 
 rm -rf output/test_memory
 start_sec="$(date +%s)"

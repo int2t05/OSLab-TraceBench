@@ -10,14 +10,58 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
 
+#define TB_REPORT_LINE_LEN 8192
+#define TB_SUMMARY_METRIC_COUNT 12
+
+typedef struct {
+    const char *name;
+    int column;
+    int seen;
+    unsigned long long first;
+    unsigned long long last;
+    unsigned long long max;
+} TbMetricSummary;
+
+typedef struct {
+    int column_count;
+    int sample_rows;
+    int profile_column;
+    int duration_column;
+    int interval_column;
+    int cgroup_enabled_column;
+    int oslab_available_column;
+    int oslab_available;
+    char profile[TB_VALUE_LEN];
+    char duration_sec[TB_VALUE_LEN];
+    char sample_interval_sec[TB_VALUE_LEN];
+    char cgroup_enabled[TB_VALUE_LEN];
+    TbMetricSummary metrics[TB_SUMMARY_METRIC_COUNT];
+} TbCsvSummary;
+
 static volatile sig_atomic_t run_interrupted = 0;
 static pid_t active_child_pid = -1;
+
+static const char *summary_metric_names[TB_SUMMARY_METRIC_COUNT] = {
+    "cpu_some_total",
+    "memory_some_total",
+    "io_some_total",
+    "cgroup_cpu_usage_usec",
+    "cgroup_memory_current",
+    "cgroup_memory_events_high",
+    "cgroup_memory_events_max",
+    "cgroup_memory_events_oom",
+    "oslab_total_tasks",
+    "oslab_running_tasks",
+    "oslab_mem_free_kb",
+    "oslab_mem_available_kb"
+};
 
 static void handle_run_signal(int signo)
 {
@@ -62,6 +106,212 @@ static int append_text(char *buffer, int size, int *used, const char *fmt, ...)
 
     *used += written;
     return 0;
+}
+
+static void init_csv_summary(TbCsvSummary *summary)
+{
+    memset(summary, 0, sizeof(*summary));
+    summary->profile_column = -1;
+    summary->duration_column = -1;
+    summary->interval_column = -1;
+    summary->cgroup_enabled_column = -1;
+    summary->oslab_available_column = -1;
+    snprintf(summary->profile, sizeof(summary->profile), "unknown");
+    snprintf(summary->duration_sec, sizeof(summary->duration_sec), "unknown");
+    snprintf(summary->sample_interval_sec, sizeof(summary->sample_interval_sec), "unknown");
+    snprintf(summary->cgroup_enabled, sizeof(summary->cgroup_enabled), "unknown");
+
+    for (int i = 0; i < TB_SUMMARY_METRIC_COUNT; i++) {
+        summary->metrics[i].name = summary_metric_names[i];
+        summary->metrics[i].column = -1;
+    }
+}
+
+static int split_csv_line(char *line, char **fields, int max_fields)
+{
+    int count = 0;
+    char *field = line;
+
+    line[strcspn(line, "\r\n")] = '\0';
+    while (field != NULL && count < max_fields) {
+        char *comma = strchr(field, ',');
+
+        if (comma != NULL) {
+            *comma = '\0';
+        }
+        fields[count++] = field;
+        field = comma == NULL ? NULL : comma + 1;
+    }
+
+    return count;
+}
+
+static void copy_summary_value(char *dest, int size, const char *value)
+{
+    if (value != NULL && value[0] != '\0') {
+        snprintf(dest, (size_t)size, "%s", value);
+    }
+}
+
+static void map_summary_columns(TbCsvSummary *summary, char **fields, int count)
+{
+    summary->column_count = count;
+    for (int i = 0; i < count; i++) {
+        if (strcmp(fields[i], "profile") == 0) {
+            summary->profile_column = i;
+        } else if (strcmp(fields[i], "duration_sec") == 0) {
+            summary->duration_column = i;
+        } else if (strcmp(fields[i], "sample_interval_sec") == 0) {
+            summary->interval_column = i;
+        } else if (strcmp(fields[i], "cgroup_enabled") == 0) {
+            summary->cgroup_enabled_column = i;
+        } else if (strcmp(fields[i], "oslab_monitor_available") == 0) {
+            summary->oslab_available_column = i;
+        }
+
+        for (int j = 0; j < TB_SUMMARY_METRIC_COUNT; j++) {
+            if (strcmp(fields[i], summary->metrics[j].name) == 0) {
+                summary->metrics[j].column = i;
+            }
+        }
+    }
+}
+
+static int parse_unsigned_field(const char *text, unsigned long long *value)
+{
+    char *end = NULL;
+
+    if (text == NULL || text[0] == '\0' || strcmp(text, "NA") == 0) {
+        return 0;
+    }
+
+    errno = 0;
+    *value = strtoull(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0') {
+        return 0;
+    }
+
+    return 1;
+}
+
+static void update_metric_summary(TbMetricSummary *metric, const char *field)
+{
+    unsigned long long value;
+
+    if (!parse_unsigned_field(field, &value)) {
+        return;
+    }
+
+    if (!metric->seen) {
+        metric->first = value;
+        metric->max = value;
+        metric->seen = 1;
+    }
+    metric->last = value;
+    if (value > metric->max) {
+        metric->max = value;
+    }
+}
+
+static int read_csv_summary(const char *csv_path, TbCsvSummary *summary)
+{
+    FILE *file;
+    char line[TB_REPORT_LINE_LEN];
+    char *fields[128];
+    int is_header = 1;
+
+    init_csv_summary(summary);
+    file = fopen(csv_path, "r");
+    if (file == NULL) {
+        tb_print_error("failed to open %s: %s", csv_path, strerror(errno));
+        return -1;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        int count = split_csv_line(line, fields, 128);
+
+        if (is_header) {
+            map_summary_columns(summary, fields, count);
+            is_header = 0;
+            continue;
+        }
+        if (count == 0 || fields[0][0] == '\0') {
+            continue;
+        }
+        if (summary->column_count > 0 && count != summary->column_count) {
+            tb_print_error("CSV row field count does not match header");
+            fclose(file);
+            return -1;
+        }
+
+        summary->sample_rows++;
+        if (summary->sample_rows == 1) {
+            if (summary->profile_column >= 0) {
+                copy_summary_value(summary->profile, sizeof(summary->profile),
+                                   fields[summary->profile_column]);
+            }
+            if (summary->duration_column >= 0) {
+                copy_summary_value(summary->duration_sec, sizeof(summary->duration_sec),
+                                   fields[summary->duration_column]);
+            }
+            if (summary->interval_column >= 0) {
+                copy_summary_value(summary->sample_interval_sec, sizeof(summary->sample_interval_sec),
+                                   fields[summary->interval_column]);
+            }
+            if (summary->cgroup_enabled_column >= 0) {
+                copy_summary_value(summary->cgroup_enabled, sizeof(summary->cgroup_enabled),
+                                   fields[summary->cgroup_enabled_column]);
+            }
+        }
+        if (summary->oslab_available_column >= 0 &&
+            strcmp(fields[summary->oslab_available_column], "true") == 0) {
+            summary->oslab_available = 1;
+        }
+        for (int i = 0; i < TB_SUMMARY_METRIC_COUNT; i++) {
+            int column = summary->metrics[i].column;
+
+            if (column >= 0 && column < count) {
+                update_metric_summary(&summary->metrics[i], fields[column]);
+            }
+        }
+    }
+
+    if (ferror(file)) {
+        tb_print_error("failed to read %s: %s", csv_path, strerror(errno));
+        fclose(file);
+        return -1;
+    }
+    fclose(file);
+
+    if (is_header || summary->sample_rows == 0) {
+        tb_print_error("CSV file has no samples: %s", csv_path);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int append_metric_summary(char *text, int size, int *used, const TbMetricSummary *metric)
+{
+    long long delta;
+
+    if (!metric->seen) {
+        return append_text(text, size, used, "%s: 未采集\n", metric->name);
+    }
+
+    if (metric->last >= metric->first) {
+        delta = (long long)(metric->last - metric->first);
+    } else {
+        delta = -(long long)(metric->first - metric->last);
+    }
+
+    return append_text(text, size, used,
+                       "%s: first=%llu last=%llu delta=%lld max=%llu\n",
+                       metric->name,
+                       metric->first,
+                       metric->last,
+                       delta,
+                       metric->max);
 }
 
 static int open_csv_file(const TbConfig *config, FILE **csv_out)
@@ -297,6 +547,14 @@ cleanup:
     if (tb_cgroup_remove_run(&cgroup) != 0 && result == 0) {
         result = 1;
     }
+    if (result == 0) {
+        char csv_path[TB_PATH_LEN];
+
+        if (tb_join_path(csv_path, sizeof(csv_path), config->output_path, "samples.csv") != 0 ||
+            tb_write_summary_file(config, csv_path) != 0) {
+            result = 1;
+        }
+    }
     sigaction(SIGINT, &old_int, NULL);
     sigaction(SIGTERM, &old_term, NULL);
     return result;
@@ -304,9 +562,11 @@ cleanup:
 
 int tb_report_command(const TbConfig *config)
 {
-    (void)config;
-    tb_print_error("report is not implemented yet");
-    return 1;
+    if (tb_generate_markdown_report(config) != 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 int tb_cleanup_command(const TbConfig *config)
@@ -411,15 +671,131 @@ int tb_write_environment_file(const TbConfig *config)
 
 int tb_write_summary_file(const TbConfig *config, const char *csv_path)
 {
-    (void)config;
-    (void)csv_path;
-    tb_print_error("summary.txt output is not implemented yet");
-    return -1;
+    TbCsvSummary summary;
+    char path[TB_PATH_LEN];
+    char text[TB_REPORT_LINE_LEN];
+    int used = 0;
+
+    if (read_csv_summary(csv_path, &summary) != 0) {
+        return -1;
+    }
+    if (tb_join_path(path, sizeof(path), config->output_path, "summary.txt") != 0) {
+        return -1;
+    }
+
+    if (append_text(text, sizeof(text), &used,
+                    "profile: %s\n"
+                    "duration_sec: %s\n"
+                    "sample_interval_sec: %s\n"
+                    "samples_csv: %s\n"
+                    "sample_rows: %d\n"
+                    "cgroup_enabled: %s\n"
+                    "oslab_monitor_available: %s\n",
+                    summary.profile,
+                    summary.duration_sec,
+                    summary.sample_interval_sec,
+                    csv_path,
+                    summary.sample_rows,
+                    summary.cgroup_enabled,
+                    summary.oslab_available ? "true" : "false") != 0) {
+        return -1;
+    }
+    if (config->no_cgroup &&
+        append_text(text, sizeof(text), &used,
+                    "warning: --no-cgroup is a low-permission demo mode and does not satisfy full P0 acceptance.\n") != 0) {
+        return -1;
+    }
+    if (append_text(text, sizeof(text), &used, "\nmetrics:\n") != 0) {
+        return -1;
+    }
+    for (int i = 0; i < TB_SUMMARY_METRIC_COUNT; i++) {
+        if (append_metric_summary(text, sizeof(text), &used, &summary.metrics[i]) != 0) {
+            return -1;
+        }
+    }
+
+    return tb_write_text_file(path, text);
 }
 
 int tb_generate_markdown_report(const TbConfig *config)
 {
-    (void)config;
-    tb_print_error("markdown report is not implemented yet");
-    return -1;
+    TbCsvSummary summary;
+    char csv_path[TB_PATH_LEN];
+    char parent[TB_PATH_LEN];
+    char text[TB_REPORT_LINE_LEN];
+    int used = 0;
+
+    if (tb_join_path(csv_path, sizeof(csv_path), config->input_path, "samples.csv") != 0) {
+        return -1;
+    }
+    if (!tb_path_readable(csv_path)) {
+        tb_print_error("report input is missing samples.csv: %s", csv_path);
+        return -1;
+    }
+    if (read_csv_summary(csv_path, &summary) != 0) {
+        return -1;
+    }
+    if (tb_parent_dir(parent, sizeof(parent), config->report_output_path) != 0 ||
+        tb_mkdir_p(parent) != 0) {
+        return -1;
+    }
+
+    if (append_text(text, sizeof(text), &used,
+                    "# OSLab TraceBench 实验报告\n\n"
+                    "## 1. 实验配置\n\n"
+                    "- profile: %s\n"
+                    "- duration_sec: %s\n"
+                    "- sample_interval_sec: %s\n"
+                    "- samples.csv: %s\n"
+                    "- sample_rows: %d\n\n"
+                    "## 2. 运行环境\n\n"
+                    "运行环境记录在输入目录的 `environment.txt` 中。\n\n"
+                    "## 3. 采样文件\n\n"
+                    "本报告基于 `%s` 生成。\n\n"
+                    "## 4. PSI 资源压力摘要\n\n",
+                    summary.profile,
+                    summary.duration_sec,
+                    summary.sample_interval_sec,
+                    csv_path,
+                    summary.sample_rows,
+                    csv_path) != 0) {
+        return -1;
+    }
+    for (int i = 0; i < 3; i++) {
+        if (append_metric_summary(text, sizeof(text), &used, &summary.metrics[i]) != 0) {
+            return -1;
+        }
+    }
+    if (append_text(text, sizeof(text), &used,
+                    "\n## 5. cgroup 指标摘要\n\n"
+                    "cgroup_enabled: %s\n\n",
+                    summary.cgroup_enabled) != 0) {
+        return -1;
+    }
+    for (int i = 3; i < 8; i++) {
+        if (append_metric_summary(text, sizeof(text), &used, &summary.metrics[i]) != 0) {
+            return -1;
+        }
+    }
+    if (append_text(text, sizeof(text), &used,
+                    "\n## 6. oslab_monitor 对照结果\n\n"
+                    "oslab_monitor_available: %s\n\n",
+                    summary.oslab_available ? "true" : "false") != 0) {
+        return -1;
+    }
+    for (int i = 8; i < TB_SUMMARY_METRIC_COUNT; i++) {
+        if (append_metric_summary(text, sizeof(text), &used, &summary.metrics[i]) != 0) {
+            return -1;
+        }
+    }
+    if (append_text(text, sizeof(text), &used,
+                    "\n## 7. 实验现象分析\n\n"
+                    "结合 PSI、cgroup 和 oslab_monitor 字段观察资源压力变化。\n\n"
+                    "## 8. 局限性\n\n"
+                    "本报告只基于当前 `samples.csv` 的 first、last、delta 和 max 摘要，"
+                    "更细粒度的趋势分析需要结合原始 CSV 或后续图表工具。\n") != 0) {
+        return -1;
+    }
+
+    return tb_write_text_file(config->report_output_path, text);
 }
