@@ -1,0 +1,31 @@
+name: 基础验证
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  basic:
+    name: 基础用户态模块
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装工具链
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: 运行基础验证
+        run: bash tests/run_all.sh
+
+      - name: 构建 TraceBench 用户态程序
+        run: |
+          cd extension/tracebench
+          make
+          ./tracebench --help

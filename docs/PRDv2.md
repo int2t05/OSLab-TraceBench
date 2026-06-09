@@ -1,70 +1,70 @@
-# PRD v2: TraceBench Resource-Pressure Observability
+# PRD v2：TraceBench 资源压力观测
 
-## 1. Objective
+## 1. 目标
 
-TraceBench extends OSLab TraceBench with a user-space tool for controlled Linux resource-pressure generation and runtime sampling. The tool runs CPU, memory, and I/O workloads, records PSI and cgroup v2 counters, optionally samples `/proc/oslab_monitor/overview`, and emits reproducible text, CSV, summary, and Markdown artifacts.
+TraceBench 为 OSLab TraceBench 增加一个用户态工具，用于生成可控 Linux 资源压力并采样运行态信号。该工具运行 CPU、内存和 I/O 工作负载，记录 PSI 与 cgroup v2 计数器，可选采样 `/proc/oslab_monitor/overview`，并输出可复现的文本、CSV、摘要和 Markdown 材料。
 
-TraceBench is implemented under `extension/tracebench/` and does not modify the basic OS models or the `oslab_monitor` kernel module.
+TraceBench 实现在 `extension/tracebench/` 下，不修改基础 OS 模型，也不修改 `oslab_monitor` 内核模块。
 
-## 2. Target Users
+## 2. 目标用户
 
-- Researchers comparing OS-level resource-pressure signals across workloads.
-- Developers validating Linux PSI and cgroup v2 observability behavior in a VM.
-- Reviewers reproducing benchmark runs from command-line inputs and generated artifacts.
+- 需要对比不同工作负载下 OS 资源压力信号的研究者。
+- 需要在 VM 中验证 Linux PSI 和 cgroup v2 观测行为的开发者。
+- 需要从命令输入和生成材料复现 benchmark 运行的审阅者。
 
-## 3. Scope
+## 3. 范围
 
-Implemented baseline scope:
+已实现基线范围：
 
 - `tracebench --help`
 - `tracebench run`
 - `tracebench report`
 - `tracebench cleanup`
-- CPU, memory, and I/O pressure profiles.
-- cgroup v2 grouping and metric collection.
-- PSI collection from `/proc/pressure/*`.
-- Optional `oslab_monitor` comparison sampling.
-- Stable `samples.csv` output.
-- `command.txt`, `environment.txt`, and `summary.txt` metadata.
-- Markdown report generation.
-- Bash integration validation.
+- CPU、内存和 I/O 压力 profile。
+- cgroup v2 分组和指标采集。
+- 从 `/proc/pressure/*` 采集 PSI。
+- 可选 `oslab_monitor` 对照采样。
+- 稳定 `samples.csv` 输出。
+- `command.txt`、`environment.txt` 和 `summary.txt` 元数据。
+- Markdown 报告生成。
+- Bash 集成验证。
 
-Out of scope:
+非范围：
 
-- Linux kernel source modification.
-- Host scheduler replacement.
-- GUI or web UI.
-- Mandatory external pressure tools such as `stress-ng` or `fio`.
-- Mandatory tracing dependencies such as `perf` or `bpftrace`.
-- sched_ext as a default workflow.
+- Linux 内核源码修改。
+- 宿主机调度器替换。
+- GUI 或 Web UI。
+- 强制依赖 `stress-ng` 或 `fio` 等外部压力工具。
+- 强制依赖 `perf` 或 `bpftrace` 等外部追踪工具。
+- 将 sched_ext 作为默认工作流。
 
-## 4. Runtime Environment
+## 4. 运行环境
 
-Reference environment:
+参考环境：
 
 ```text
-Ubuntu 22.04 LTS or Ubuntu 24.04 LTS VM
-Linux kernel with cgroup v2
+Ubuntu 22.04 LTS 或 Ubuntu 24.04 LTS VM
+支持 cgroup v2 的 Linux 内核
 /proc/pressure/cpu
 /proc/pressure/memory
 /proc/pressure/io
 gcc
 make
 bash
-sudo/root for default cgroup mode
+默认 cgroup 模式需要 sudo/root
 ```
 
-Full validation requires cgroup v2 and PSI support. `--no-cgroup` is available for low-permission exploration, but it does not produce full cgroup-backed results.
+完整验证需要 cgroup v2 和 PSI 支持。`--no-cgroup` 可用于低权限探索，但不会产生完整的 cgroup 指标。
 
-## 5. Command-Line Requirements
+## 5. 命令行需求
 
-Executable:
+可执行文件：
 
 ```text
 extension/tracebench/tracebench
 ```
 
-Required commands:
+必需命令：
 
 ```bash
 ./tracebench --help
@@ -75,80 +75,80 @@ sudo ./tracebench run --profile io --duration 5 --sample-interval 1 --output out
 sudo ./tracebench cleanup
 ```
 
-Run parameters:
+运行参数：
 
-| Parameter | Requirement |
+| 参数 | 要求 |
 |---|---|
-| `--profile` | required; one of `cpu`, `memory`, `io` |
-| `--duration` | required positive integer seconds |
-| `--sample-interval` | required positive integer seconds, not greater than duration |
-| `--output` | required output directory for `run` |
-| `--cpu-workers` | positive integer for CPU profile, default `2` |
-| `--memory-mb` | positive integer for memory profile, default `128` |
-| `--io-mb` | positive integer for I/O profile, default `64` |
-| `--cgroup-name` | cgroup namespace name, default `oslab_tracebench` |
-| `--no-cgroup` | disables cgroup creation and writes cgroup fields as `NA` |
-| `--with-oslab-monitor` | requires `/proc/oslab_monitor/overview` to exist |
+| `--profile` | 必填；取值为 `cpu`、`memory`、`io` |
+| `--duration` | 必填正整数秒 |
+| `--sample-interval` | 必填正整数秒，不能大于 duration |
+| `--output` | `run` 命令的输出目录 |
+| `--cpu-workers` | CPU profile 的工作线程数，默认 `2` |
+| `--memory-mb` | 内存 profile 的内存大小，默认 `128` |
+| `--io-mb` | I/O profile 的写入大小，默认 `64` |
+| `--cgroup-name` | cgroup 命名空间，默认 `oslab_tracebench` |
+| `--no-cgroup` | 禁用 cgroup 创建，cgroup 字段写为 `NA` |
+| `--with-oslab-monitor` | 要求 `/proc/oslab_monitor/overview` 存在 |
 
-Report parameters:
+报告参数：
 
-| Parameter | Requirement |
+| 参数 | 要求 |
 |---|---|
-| `--input` | directory containing `samples.csv` |
-| `--output` | Markdown report path |
+| `--input` | 包含 `samples.csv` 的目录 |
+| `--output` | Markdown 报告路径 |
 
-All errors must be written with an `error:` prefix and return a non-zero exit code.
+所有错误都必须写入 `error:` 前缀，并返回非零退出码。
 
-## 6. Workload Requirements
+## 6. 工作负载需求
 
-CPU profile:
+CPU profile：
 
-- Starts CPU-bound worker threads.
-- Supports configurable worker count.
-- Runs until the configured duration elapses.
+- 启动 CPU-bound 工作线程。
+- 支持配置工作线程数。
+- 持续运行到配置的 duration 结束。
 
-Memory profile:
+Memory profile：
 
-- Allocates the configured memory amount.
-- Periodically touches allocated memory to keep pages active.
-- Avoids setting cgroup memory limits by default.
+- 分配配置的内存大小。
+- 周期性触碰内存页，使内存压力可见。
+- 默认不设置 cgroup 内存限制。
 
-I/O profile:
+I/O profile：
 
-- Writes a fixed temporary file in the output directory.
-- Calls `fsync` to expose storage pressure.
-- Removes the temporary file on normal completion.
+- 在输出目录写入固定临时文件。
+- 调用 `fsync` 暴露存储压力。
+- 正常完成时删除临时文件。
 
-All workloads must be implemented in the project codebase and must be owned by the `tracebench` process tree.
+所有工作负载必须由项目代码实现，并归属于 `tracebench` 进程树。
 
-## 7. Sampling Requirements
+## 7. 采样需求
 
-PSI:
+PSI：
 
-- Read `/proc/pressure/cpu`.
-- Read `/proc/pressure/memory`.
-- Read `/proc/pressure/io`.
-- Parse `some` and `full` lines when available.
-- Record `avg10`, `avg60`, `avg300`, and `total`.
+- 读取 `/proc/pressure/cpu`。
+- 读取 `/proc/pressure/memory`。
+- 读取 `/proc/pressure/io`。
+- 在可用时解析 `some` 和 `full` 行。
+- 记录 `avg10`、`avg60`、`avg300` 和 `total`。
 
-cgroup v2:
+cgroup v2：
 
-- Create `/sys/fs/cgroup/<cgroup-name>/<profile>/<run-id>/`.
-- Move the workload child process into the run cgroup.
-- Read `cpu.stat`.
-- Read `memory.current`.
-- Read `memory.events`.
-- Remove empty cgroups created by the run.
+- 创建 `/sys/fs/cgroup/<cgroup-name>/<profile>/<run-id>/`。
+- 将工作负载子进程移入运行 cgroup。
+- 读取 `cpu.stat`。
+- 读取 `memory.current`。
+- 读取 `memory.events`。
+- 删除本次运行创建的空 cgroup。
 
-`oslab_monitor` comparison:
+`oslab_monitor` 对照：
 
-- If `/proc/oslab_monitor/overview` exists, collect `total_tasks`, `running_tasks`, `sleeping_tasks`, `mem_free_kb`, and `mem_available_kb`.
-- If absent in default mode, record `oslab_monitor_available=false`.
-- If absent with `--with-oslab-monitor`, fail with `error:`.
+- 如果 `/proc/oslab_monitor/overview` 存在，采集 `total_tasks`、`running_tasks`、`sleeping_tasks`、`mem_free_kb` 和 `mem_available_kb`。
+- 默认模式下如果不存在，记录 `oslab_monitor_available=false`。
+- `--with-oslab-monitor` 模式下如果不存在，必须以 `error:` 失败。
 
-## 8. Output Requirements
+## 8. 输出需求
 
-Each run writes the following files under the requested output directory:
+每次运行在请求的输出目录中写入：
 
 ```text
 command.txt
@@ -157,80 +157,80 @@ samples.csv
 summary.txt
 ```
 
-`tracebench report` writes a Markdown report at the requested output path.
+`tracebench report` 在请求路径写入 Markdown 报告。
 
-`samples.csv` must have a stable header. Required field groups:
+`samples.csv` 必须有稳定表头。必需字段组：
 
-- sample index and elapsed time.
-- profile, duration, sample interval, and run id.
-- cgroup enabled flag and path.
-- CPU, memory, and I/O PSI fields.
-- cgroup CPU and memory fields.
-- `oslab_monitor` availability and selected counters.
+- 样本序号和已运行时间。
+- profile、duration、sample interval 和 run id。
+- cgroup 启用标记和路径。
+- CPU、内存和 I/O PSI 字段。
+- cgroup CPU 和内存字段。
+- `oslab_monitor` 可用性和选定计数器。
 
-`summary.txt` must include:
+`summary.txt` 必须包含：
 
-- profile.
-- duration and sample interval.
-- output path.
-- cgroup status.
-- sample count.
-- references to generated files.
+- profile。
+- duration 和 sample interval。
+- 输出路径。
+- cgroup 状态。
+- 样本数量。
+- 生成文件引用。
 
-Markdown reports must include:
+Markdown 报告必须包含：
 
-- run configuration.
-- environment summary.
-- `samples.csv` reference.
-- PSI summary.
-- cgroup summary.
-- `oslab_monitor` comparison section.
-- limitations and interpretation notes.
+- 运行配置。
+- 环境摘要。
+- `samples.csv` 引用。
+- PSI 摘要。
+- cgroup 摘要。
+- `oslab_monitor` 对照部分。
+- 局限性和解释说明。
 
-## 9. Cleanup Requirements
+## 9. 清理需求
 
-`tracebench cleanup` may remove only:
+`tracebench cleanup` 只允许删除：
 
-- cgroups under `/sys/fs/cgroup/<cgroup-name>/`.
-- `tracebench_io.tmp` files under TraceBench output profile directories.
+- `/sys/fs/cgroup/<cgroup-name>/` 下的 cgroup。
+- TraceBench 输出 profile 目录下的 `tracebench_io.tmp` 文件。
 
-It must not delete CSV files, summaries, Markdown reports, user-created files, or arbitrary directories. If a cgroup still contains processes, cleanup must fail or skip that cgroup rather than killing unrelated processes.
+不得删除 CSV、摘要、Markdown 报告、用户创建文件或任意目录。如果 cgroup 中仍有进程，cleanup 必须失败或跳过该 cgroup，而不能杀死无关进程。
 
-## 10. Validation Requirements
+## 10. 验证需求
 
-The integration script is:
+集成脚本：
 
 ```bash
 extension/tracebench/tests/test_tracebench.sh
 ```
 
-It must validate:
+必须验证：
 
-- successful build.
-- help output.
-- parameter error paths.
-- CPU profile run.
-- memory profile run.
-- I/O profile run.
-- CSV header stability.
-- CSV row field consistency.
-- summary generation.
-- Markdown report generation.
-- cleanup behavior.
-- `--with-oslab-monitor` failure when the proc interface is absent.
+- 构建成功。
+- help 输出。
+- 参数错误路径。
+- CPU profile 运行。
+- memory profile 运行。
+- I/O profile 运行。
+- CSV 表头稳定性。
+- CSV 每行字段数量一致。
+- summary 生成。
+- Markdown 报告生成。
+- cleanup 行为。
+- proc 接口缺失时 `--with-oslab-monitor` 失败。
 
-## 11. Acceptance Checklist
+## 11. 完成清单
 
-- [ ] `make` builds `tracebench`.
-- [ ] `tracebench --help` shows `run`, `report`, and `cleanup`.
-- [ ] CPU profile runs and exits.
-- [ ] Memory profile runs and exits.
-- [ ] I/O profile runs and exits.
-- [ ] Each profile writes `samples.csv`.
-- [ ] CSV includes PSI fields.
-- [ ] CSV includes cgroup fields.
-- [ ] CSV includes `oslab_monitor` fields.
-- [ ] `tracebench report` generates Markdown.
-- [ ] `tracebench cleanup` preserves generated CSV, summary, and report files.
-- [ ] Invalid parameters return non-zero and print `error:`.
-- [ ] `sudo bash tests/test_tracebench.sh` passes on the reference VM.
+- [ ] `make` 可以构建 `tracebench`。
+- [ ] `tracebench --help` 显示 `run`、`report` 和 `cleanup`。
+- [ ] CPU profile 可以运行并退出。
+- [ ] Memory profile 可以运行并退出。
+- [ ] I/O profile 可以运行并退出。
+- [ ] 每个 profile 写入 `samples.csv`。
+- [ ] CSV 包含 PSI 字段。
+- [ ] CSV 包含 cgroup 字段。
+- [ ] CSV 包含 `oslab_monitor` 字段。
+- [ ] `tracebench report` 生成 Markdown。
+- [ ] `tracebench cleanup` 保留生成的 CSV、摘要和报告。
+- [ ] 非法参数返回非零并输出 `error:`。
+- [ ] 参考 VM 上 `sudo bash tests/test_tracebench.sh` 通过。

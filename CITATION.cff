@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "如果你在研究或工程工作中使用 OSLab TraceBench，请引用本仓库。"
+title: "OSLab TraceBench"
+abstract: "一个面向操作系统机制建模、Linux /proc 观测和资源压力采样的 C/Linux 研究型开源项目。"
+authors:
+  - name: "int2t05"
+date-released: 2026-06-09
+license: "MulanPSL-2.0"
+repository-code: "https://github.com/int2t05/OSLab-TraceBench"
+keywords:
+  - operating-systems
+  - linux
+  - c
+  - procfs
+  - cgroup-v2
+  - psi
+  - benchmarking

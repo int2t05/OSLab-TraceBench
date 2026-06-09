@@ -1,39 +1,39 @@
-# TECH: Core System Technical Design
+# TECH：核心系统技术设计
 
-## 1. Architecture
+## 1. 架构
 
-The core system is split into two layers:
+核心系统分为两层：
 
-- user-space OS mechanism models under `basic/`.
-- Linux runtime observability under `extension/oslab_monitor/`.
+- `basic/` 下的用户态 OS 机制模型。
+- `extension/oslab_monitor/` 下的 Linux 运行态观测模块。
 
-The user-space models are independent C command-line programs. They share no common library and can be built, executed, and validated separately.
+用户态模型是相互独立的 C 命令行程序。它们不共享公共库，可以单独构建、执行和验证。
 
-The observability extension is a Linux kernel module that exposes process and memory state through `/proc/oslab_monitor/`, plus a small C CLI that forwards proc output to userspace.
+观测扩展是一个 Linux 内核模块，通过 `/proc/oslab_monitor/` 导出进程和内存状态；用户态 CLI 只负责转发 proc 输出。
 
-## 2. Build Model
+## 2. 构建模型
 
-Each module owns a `Makefile` with:
+每个模块拥有自己的 `Makefile`，支持：
 
 ```bash
 make
 make clean
 ```
 
-Common user-space compiler expectations:
+用户态通用编译要求：
 
 ```text
 gcc
 -Wall
 -Wextra
-C11-compatible code
+C11 兼容代码
 ```
 
-Synchronization code links pthreads. Kernel module build uses the host kernel build system through the local `linux-headers-$(uname -r)` tree.
+同步模块链接 pthread。内核模块通过宿主内核构建系统和本机 `linux-headers-$(uname -r)` 构建。
 
-## 3. User-Space Module Layout
+## 3. 用户态模块布局
 
-Each basic module follows:
+每个基础模块遵循：
 
 ```text
 basic/<module>/
@@ -48,34 +48,34 @@ basic/<module>/
 └── tests/
 ```
 
-Roles:
+职责：
 
-- `main.c`: CLI dispatch and top-level error handling.
-- `parser.c`: text input parsing and validation.
-- core implementation file: algorithm or mechanism logic.
-- `output.c`: stable output formatting.
-- `include/*.h`: shared types and function declarations inside the module.
+- `main.c`：CLI 分发和顶层错误处理。
+- `parser.c`：文本输入解析和校验。
+- 核心实现文件：算法或机制逻辑。
+- `output.c`：稳定输出格式。
+- `include/*.h`：模块内部共享类型和函数声明。
 
-## 4. Scheduler Design
+## 4. 调度模块设计
 
-Path: `basic/scheduler/`
+路径：`basic/scheduler/`
 
-Core structures:
+核心结构：
 
-- `Process`: name, arrival time, burst time, priority, remaining time, start/finish timestamps, input order.
-- `Segment`: timeline segment name and time interval.
-- `Timeline`: dynamic segment array.
+- `Process`：进程名、到达时间、服务时间、优先级、剩余时间、开始/完成时间和输入顺序。
+- `Segment`：时间线段名和时间区间。
+- `Timeline`：动态时间线数组。
 
-Algorithms:
+算法：
 
-- FCFS sorts by arrival time and input order.
-- SJF is non-preemptive and selects the shortest arrived unfinished process.
-- Priority is non-preemptive and treats lower numeric priority as higher priority.
-- RR uses a ready queue and time quantum.
+- FCFS 按到达时间和输入顺序调度。
+- SJF 为非抢占式，从已到达且未完成进程中选择服务时间最短者。
+- Priority 为非抢占式，数值更低表示优先级更高。
+- RR 使用就绪队列和时间片推进。
 
-The scheduler records `IDLE` timeline segments when the CPU has no runnable process.
+当 CPU 没有可运行进程时，调度器记录 `IDLE` 时间线段。
 
-Statistics:
+统计公式：
 
 ```text
 turnaround = finish - arrival
@@ -83,83 +83,83 @@ waiting = turnaround - burst
 weighted_turnaround = turnaround / burst
 ```
 
-## 5. Memory Design
+## 5. 内存模块设计
 
-Path: `basic/memory/`
+路径：`basic/memory/`
 
-Partition mode:
+动态分区模式：
 
-- linked-list partition representation.
-- first-fit and best-fit search strategies.
-- split-on-allocate.
-- coalesce-on-free.
-- allocated and free tables emitted by ascending start address.
+- 使用链表表示分区。
+- 支持首次适应和最佳适应搜索策略。
+- 分配时拆分分区。
+- 释放时合并相邻空闲分区。
+- 按起始地址升序输出已分配和空闲表。
 
-Paging mode:
+页面置换模式：
 
-- array-backed frames.
-- FIFO uses load timestamps.
-- LRU uses last-use timestamps.
-- empty frames are represented by `-1`.
-- page-fault rate is calculated as `faults / accesses * 100`.
+- 使用数组表示页框。
+- FIFO 使用装入时间戳。
+- LRU 使用最近访问时间戳。
+- 空页框用 `-1` 表示。
+- 缺页率计算为 `faults / accesses * 100`。
 
-## 6. Synchronization Design
+## 6. 同步模块设计
 
-Path: `basic/sync/`
+路径：`basic/sync/`
 
-Producer-consumer:
+生产者-消费者：
 
-- mutex.
-- `not_full` condition variable.
-- `not_empty` condition variable.
-- ring buffer.
-- finite production target and finite global consumption target.
+- 互斥锁。
+- `not_full` 条件变量。
+- `not_empty` 条件变量。
+- 环形缓冲区。
+- 有限生产目标和有限全局消费目标。
 
-Readers-writers:
+读者-写者：
 
-- writer-preference policy.
-- active reader/writer counters.
-- waiting writer counter.
-- read and write condition variables.
+- 写者优先策略。
+- 活跃读者/写者计数。
+- 等待写者计数。
+- 读条件变量和写条件变量。
 
-Dining philosophers:
+哲学家进餐：
 
-- five philosophers.
-- five chopstick mutexes.
-- room limiter allowing at most four philosophers to compete for chopsticks at the same time.
+- 五个哲学家。
+- 五个筷子互斥锁。
+- 房间限制器最多允许四个哲学家同时竞争筷子。
 
-## 7. Filesystem Design
+## 7. 文件系统设计
 
-Path: `basic/filesystem/`
+路径：`basic/filesystem/`
 
-The filesystem is an in-memory model:
+文件系统是内存模型：
 
-- directory tree rooted at `/`.
-- file nodes store size and block list.
-- directory nodes store child nodes.
-- bitmap tracks block allocation.
-- block data is stored in memory.
+- 目录树根为 `/`。
+- 文件节点记录大小和块列表。
+- 目录节点记录子节点。
+- 位图记录块分配状态。
+- 块数据存放在内存中。
 
-Writes are overwrite-only. Before replacing file content, the implementation checks whether enough free blocks are available, so a failed write does not destroy the previous file content.
+写入采用覆盖语义。替换文件内容前会先检查空闲块是否足够，因此失败写入不会破坏旧文件内容。
 
-Path rules:
+路径规则：
 
-- absolute paths only.
-- maximum path length enforced.
-- component names have a fixed maximum length.
-- allowed characters are letters, digits, `_`, `-`, and `.`.
+- 仅支持绝对路径。
+- 限制最大路径长度。
+- 限制组件名最大长度。
+- 组件名允许字母、数字、`_`、`-` 和 `.`。
 
-## 8. Linux Observability Module
+## 8. Linux 观测模块设计
 
-Path: `extension/oslab_monitor/`
+路径：`extension/oslab_monitor/`
 
-Kernel module:
+内核模块：
 
 ```text
 kernel/oslab_monitor.c
 ```
 
-Proc tree:
+proc 树：
 
 ```text
 /proc/oslab_monitor/
@@ -168,25 +168,25 @@ Proc tree:
 └── pid
 ```
 
-Permissions:
+权限：
 
-| Entry | Mode |
+| 节点 | 模式 |
 |---|---:|
 | `overview` | `0444` |
 | `tasks` | `0444` |
 | `pid` | `0644` |
 
-Implementation notes:
+实现要点：
 
-- proc entries use `seq_file` style output for stable long-text reads.
-- process traversal uses kernel process iteration helpers.
-- memory information is read through safe kernel interfaces.
-- `mm == NULL` is handled for kernel threads or processes without an address space.
-- all proc entries are removed during module exit.
+- proc 节点使用 `seq_file` 风格输出，保证长文本读取稳定。
+- 进程遍历使用内核进程迭代接口。
+- 内存信息通过安全内核接口读取。
+- 对内核线程或无地址空间进程处理 `mm == NULL`。
+- 模块退出时清理全部 proc 节点。
 
 ## 9. `overview`
 
-`overview` emits:
+`overview` 输出：
 
 ```text
 module:
@@ -202,28 +202,28 @@ mem_available_kb:
 read_time_jiffies:
 ```
 
-The implementation scans tasks and uses kernel memory-info helpers. Numeric fields are emitted as non-negative values.
+实现会扫描进程并读取内核内存信息。数值字段输出非负值。
 
 ## 10. `tasks`
 
-`tasks` emits a stable table:
+`tasks` 输出稳定表格：
 
 ```text
 PID     COMM            STATE   POLICY  PRIO  NICE  THREADS  RSS_KB  MIN_FLT  MAJ_FLT
 ```
 
-The implementation traverses all processes and formats scheduling policy, priority, nice value, thread count, RSS, and fault fields. Missing or unavailable values are represented without breaking the column layout.
+实现遍历全部进程并格式化调度策略、优先级、nice 值、线程数、RSS 和缺页字段。缺失或不可用值不应破坏列布局。
 
 ## 11. `pid`
 
-`pid` supports:
+`pid` 支持：
 
-- writing a positive target PID.
-- reading selected PID details.
-- reporting not found when the process no longer exists.
-- bounded `copy_from_user` input handling.
+- 写入正整数目标 PID。
+- 读取选中 PID 的详情。
+- 进程不存在时报告 not found。
+- 对 `copy_from_user` 输入做长度边界处理。
 
-Read fields:
+读取字段：
 
 ```text
 pid:
@@ -239,9 +239,9 @@ rss_kb:
 
 ## 12. `oslabctl`
 
-Path: `extension/oslab_monitor/user/`
+路径：`extension/oslab_monitor/user/`
 
-`oslabctl` forwards proc content without reformatting:
+`oslabctl` 不重新格式化 proc 内容：
 
 ```bash
 ./oslabctl overview
@@ -249,57 +249,57 @@ Path: `extension/oslab_monitor/user/`
 sudo ./oslabctl pid 1
 ```
 
-This avoids maintaining two output formats and keeps the CLI consistent with direct proc reads.
+这样可以避免维护两套输出格式，并让 proc 接口成为唯一事实来源。
 
-## 13. Validation
+## 13. 验证
 
-User-space validation:
+用户态验证：
 
 ```bash
 bash tests/run_all.sh
 ```
 
-Kernel-module validation:
+内核模块验证：
 
 ```bash
 cd extension/oslab_monitor
 bash tests/test_oslab_monitor.sh
 ```
 
-Validation scripts check exit codes, required fields, deterministic outputs, and cleanup behavior. The kernel-module script uses a trap to unload the module if a failure occurs mid-run.
+验证脚本检查退出码、必需字段、确定性输出和清理行为。内核模块脚本使用 trap，确保中途失败时尽量卸载模块。
 
-## 14. Failure Modes
+## 14. 失败模式
 
-| Failure mode | Mitigation |
+| 失败模式 | 处理方式 |
 |---|---|
-| malformed input | parse strictly, return non-zero, print `error:` |
-| scheduler tie ambiguity | use documented arrival and input-order tie breakers |
-| partition fragmentation after free | coalesce adjacent free partitions |
-| failed filesystem write | check capacity before replacing old file data |
-| synchronization deadlock | finite counters and deadlock-avoidance policy |
-| long task list truncation | use `seq_file` style output |
-| process without `mm` | check null address-space pointers |
-| proc PID write overflow | bounded user buffer and integer parsing |
-| stale proc entries after unload | remove entries in reverse creation order |
+| 输入格式错误 | 严格解析，返回非零，输出 `error:` |
+| 调度平局不明确 | 使用已文档化的到达时间和输入顺序规则 |
+| 释放后分区碎片 | 合并相邻空闲分区 |
+| 文件系统写入失败 | 替换旧内容前先检查容量 |
+| 同步死锁 | 有限计数和死锁规避策略 |
+| 长进程列表截断 | 使用 `seq_file` 风格输出 |
+| 进程没有 `mm` | 检查空地址空间指针 |
+| proc PID 写入溢出 | 有界用户缓冲区和整数解析 |
+| 卸载后残留 proc 节点 | 按创建逆序删除节点 |
 
-## 15. Design Decisions
+## 15. 设计决策
 
-### DD-001: Four Independent User-Space CLIs
+### DD-001：四个独立用户态 CLI
 
-Each OS mechanism has different input semantics, output semantics, and validation fixtures. Independent binaries keep module boundaries explicit and reduce hidden coupling.
+不同 OS 机制的输入、输出和验证样例差异明显。独立二进制可以保持模块边界清晰，减少隐藏耦合。
 
-### DD-002: No Cross-Module Common Library
+### DD-002：不引入跨模块公共库
 
-The modules intentionally duplicate small parser and output helpers. This avoids introducing shared behavior that would couple independent mechanism models.
+模块之间故意保留少量解析和输出辅助逻辑重复，避免共享行为耦合独立机制模型。
 
-### DD-003: In-Memory Filesystem
+### DD-003：内存型文件系统
 
-The filesystem models directory, metadata, and block allocation behavior without persistent disk state. This keeps the mechanism focused and reproducible.
+文件系统建模目录、元数据和块分配行为，但不持久化磁盘状态，从而保持机制聚焦且可复现。
 
-### DD-004: `/proc` + `seq_file` for Observability
+### DD-004：使用 `/proc` 和 `seq_file` 做观测
 
-`/proc` is directly inspectable from shell tools and fits process/memory observability. `seq_file` avoids fixed-buffer truncation for process listings.
+`/proc` 可直接通过 shell 工具检查，适合进程和内存观测。`seq_file` 可以避免进程列表使用固定缓冲区导致截断。
 
-### DD-005: Raw `oslabctl` Forwarding
+### DD-005：`oslabctl` 原样转发
 
-The user-space wrapper reads and writes proc entries but does not reinterpret the kernel output. This keeps the proc interface as the single source of truth.
+用户态封装只读写 proc 节点，不重新解释内核输出。这样可以把 proc 接口保持为单一事实来源。
