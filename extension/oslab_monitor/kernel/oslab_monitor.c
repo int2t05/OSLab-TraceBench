@@ -1,6 +1,6 @@
 /*
  * 文件作用：实现 oslab_monitor Linux 内核模块并创建 /proc/oslab_monitor 接口。
- * 设计原因：扩展部分要求真实 Linux 内核模块实践，单文件实现便于课程验收定位生命周期和 /proc 逻辑。
+ * 设计原因：该模块验证真实 Linux 内核运行态观测路径，单文件实现便于定位生命周期和 /proc 逻辑。
  */
 #include <linux/fs.h>
 #include <linux/init.h>

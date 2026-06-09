@@ -16,7 +16,7 @@ static void print_help(const char *program)
 
 /*
  * 解析固定 CLI 参数。
- * 只接受文档声明的参数组合，避免为课程项目增加额外入口形态。
+ * 只接受文档声明的参数组合，避免增加未文档化的入口形态。
  */
 static int parse_args(int argc, char **argv, const char **mode, const char **algorithm)
 {

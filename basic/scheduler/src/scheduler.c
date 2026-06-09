@@ -17,7 +17,7 @@ int timeline_init(Timeline *timeline)
 
 /*
  * 追加甘特图时间段。
- * 不合并相邻同名段，是因为 RR 需要保留每个时间片边界用于课程报告分析。
+ * 不合并相邻同名段，是因为 RR 需要保留每个时间片边界用于调度行为分析。
  */
 int timeline_append(Timeline *timeline, const char *name, int start, int end)
 {

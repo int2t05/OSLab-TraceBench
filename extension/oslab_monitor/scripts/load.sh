@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 文件作用：编译并加载 oslab_monitor 内核模块。
-# 设计原因：加载流程需要 root 权限和环境检查，脚本能让演示步骤稳定复现。
+# 设计原因：加载流程需要 root 权限和环境检查，脚本能让运行步骤稳定复现。
 
 set -euo pipefail
 

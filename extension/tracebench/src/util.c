@@ -89,7 +89,7 @@ void tb_print_help(const char *argv0)
     printf("  --memory-mb N            memory workload size, default 128\n");
     printf("  --io-mb N                I/O workload size, default 64\n");
     printf("  --cgroup-name NAME       cgroup v2 namespace, default oslab_tracebench\n");
-    printf("  --no-cgroup              low-permission demo mode\n");
+    printf("  --no-cgroup              low-permission mode without cgroup metrics\n");
     printf("  --with-oslab-monitor     require /proc/oslab_monitor/overview\n");
 }
 

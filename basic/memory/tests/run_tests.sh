@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 文件作用：验证内存模块的动态分区、页面置换 oracle 和错误输入。
-# 设计原因：FF/BF/FIFO/LRU 的输出需要可重复检查，脚本用于固定课程验收关键字段。
+# 设计原因：FF/BF/FIFO/LRU 的输出需要可重复检查，脚本用于固定回归验证关键字段。
 
 set -euo pipefail
 

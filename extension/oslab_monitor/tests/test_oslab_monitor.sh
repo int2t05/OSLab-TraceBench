@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 文件作用：在 Ubuntu VM 中集成验证 oslab_monitor 内核模块、/proc 接口和 oslabctl。
-# 设计原因：内核模块测试可能中途失败，trap 尽量卸载模块，避免污染后续验收环境。
+# 设计原因：内核模块测试可能中途失败，trap 尽量卸载模块，避免污染后续验证环境。
 
 set -euo pipefail
 

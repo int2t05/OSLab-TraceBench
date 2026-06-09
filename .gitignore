@@ -24,4 +24,3 @@ extension/oslab_monitor/user/oslabctl
 extension/tracebench/tracebench
 extension/tracebench/*.o
 extension/tracebench/output/*/
-!extension/tracebench/output/.gitkeep

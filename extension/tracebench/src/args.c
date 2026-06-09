@@ -1,6 +1,6 @@
 /*
  * 文件作用：解析 tracebench 的 run、report、cleanup 子命令参数。
- * 设计原因：参数规则是 P0 验收入口，集中校验可以避免后续采样和 workload 模块重复判断。
+ * 设计原因：参数规则是运行入口的边界，集中校验可以避免后续采样和 workload 模块重复判断。
  */
 
 #include "tracebench.h"

@@ -1,7 +1,6 @@
 /*
- * 文件作用：保留 TraceBench cgroup v2 管理模块的编译单元。
- * 设计原因：PLANv2 要求 cgroup 逻辑独立于 CLI；当前阶段只提供占位函数，
- * 后续任务会在同一文件中实现检测、创建、采样和清理。
+ * 文件作用：实现 TraceBench cgroup v2 管理、采样和清理。
+ * 设计原因：cgroup 生命周期独立于 CLI 参数解析，集中在本文件可以避免采样路径分散。
  */
 
 #include "tracebench.h"
@@ -98,7 +97,7 @@ int tb_cgroup_init(const TbConfig *config, TbCgroup *cgroup)
     }
 
     if (!tb_is_root()) {
-        tb_print_error("cgroup mode requires root; rerun with sudo or use --no-cgroup for low-permission demo");
+        tb_print_error("cgroup mode requires root; rerun with sudo or use --no-cgroup to collect without cgroup metrics");
         return -1;
     }
     if (!tb_path_readable("/sys/fs/cgroup/cgroup.controllers")) {

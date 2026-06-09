@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# 文件作用：验证 TraceBench v2 P0 CLI 的基础行为。
-# 设计原因：本测试放在模块自己的 tests 目录中，便于在 Ubuntu VM 中单独验收 TraceBench，
+# 文件作用：验证 TraceBench v2 基线 CLI 的基础行为。
+# 设计原因：本测试放在模块自己的 tests 目录中，便于在 Ubuntu VM 中单独验证 TraceBench，
 # 避免把需要 root 和 cgroup v2 的测试混入根目录基础模块测试。
 
 set -euo pipefail
@@ -9,7 +9,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 cleanup() {
-    # 使用 trap 是为了测试中途失败时仍尽量清理 cgroup 和残留 I/O 临时文件，避免污染后续验收。
+    # 使用 trap 是为了测试中途失败时仍尽量清理 cgroup 和残留 I/O 临时文件，避免污染后续验证。
     if [ -x ./tracebench ]; then
         ./tracebench cleanup >/dev/null 2>&1 || true
     fi
@@ -20,7 +20,7 @@ trap cleanup EXIT
 if [ "$(id -u)" -eq 0 ]; then
     echo "running as root"
 else
-    echo "error: tracebench P0 integration test requires sudo/root" >&2
+    echo "error: tracebench integration test requires sudo/root" >&2
     exit 1
 fi
 
@@ -31,16 +31,11 @@ make clean
 make
 test -x ./tracebench
 
-bash -n scripts/run_cpu_demo.sh
-bash -n scripts/run_memory_demo.sh
-bash -n scripts/run_io_demo.sh
-bash -n scripts/cleanup.sh
-
 require_readable() {
     local path="$1"
 
     if [ ! -r "$path" ]; then
-        printf 'error: %s is required for TraceBench P0 PSI sampling\n' "$path" >&2
+        printf 'error: %s is required for TraceBench PSI sampling\n' "$path" >&2
         exit 1
     fi
 }

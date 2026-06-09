@@ -1,6 +1,6 @@
 /*
  * 文件作用：实现动态分区 FF/BF 分配、回收和相邻空闲分区合并。
- * 设计原因：链表能直接表达分区分裂和合并，避免为课程模拟引入复杂索引结构。
+ * 设计原因：链表能直接表达分区分裂和合并，避免为当前模拟模型引入复杂索引结构。
  */
 #include "memory.h"
 
@@ -139,7 +139,7 @@ static int release_partition(Partition *head, const char *owner)
 
 /*
  * 执行动态分区命令流。
- * 单条操作失败后继续输出当前状态，便于报告中观察错误发生时的内存表。
+ * 单条操作失败后继续输出当前状态，便于运行记录中观察错误发生时的内存表。
  */
 int run_partition(const PartitionInput *input, PartitionAlgorithm algorithm)
 {

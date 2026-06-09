@@ -40,7 +40,7 @@ static void set_defaults(SyncConfig *config)
 
 /*
  * 解析 CLI 参数。
- * 未出现 --problem 视为错误，因为用户必须明确选择要演示的同步问题。
+ * 未出现 --problem 视为错误，因为用户必须明确选择要运行的同步问题。
  */
 int parse_sync_args(int argc, char **argv, SyncConfig *config)
 {

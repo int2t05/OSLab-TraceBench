@@ -1,7 +1,6 @@
 /*
  * 文件作用：实现 TraceBench run/report/cleanup 当前阶段的命令边界。
- * 设计原因：PLANv2 后续会在本文件补齐 summary 和 Markdown 报告生成；
- * 当前阶段只让 CLI 参数测试先通过，未实现的执行命令明确返回 error。
+ * 设计原因：运行、汇总和清理共享同一组采样产物，集中在本文件可以保持输出字段一致。
  */
 
 #include "tracebench.h"
@@ -702,7 +701,7 @@ int tb_write_summary_file(const TbConfig *config, const char *csv_path)
     }
     if (config->no_cgroup &&
         append_text(text, sizeof(text), &used,
-                    "warning: --no-cgroup is a low-permission demo mode and does not satisfy full P0 acceptance.\n") != 0) {
+                    "warning: --no-cgroup is a low-permission mode and omits cgroup-backed metrics.\n") != 0) {
         return -1;
     }
     if (append_text(text, sizeof(text), &used, "\nmetrics:\n") != 0) {
@@ -741,18 +740,18 @@ int tb_generate_markdown_report(const TbConfig *config)
     }
 
     if (append_text(text, sizeof(text), &used,
-                    "# OSLab TraceBench 实验报告\n\n"
-                    "## 1. 实验配置\n\n"
+                    "# OSLab TraceBench Runtime Report\n\n"
+                    "## 1. Run Configuration\n\n"
                     "- profile: %s\n"
                     "- duration_sec: %s\n"
                     "- sample_interval_sec: %s\n"
                     "- samples.csv: %s\n"
                     "- sample_rows: %d\n\n"
-                    "## 2. 运行环境\n\n"
-                    "运行环境记录在输入目录的 `environment.txt` 中。\n\n"
-                    "## 3. 采样文件\n\n"
-                    "本报告基于 `%s` 生成。\n\n"
-                    "## 4. PSI 资源压力摘要\n\n",
+                    "## 2. Runtime Environment\n\n"
+                    "Runtime environment metadata is recorded in `environment.txt` under the input directory.\n\n"
+                    "## 3. Sample File\n\n"
+                    "This report is generated from `%s`.\n\n"
+                    "## 4. PSI Resource Pressure Summary\n\n",
                     summary.profile,
                     summary.duration_sec,
                     summary.sample_interval_sec,
@@ -767,7 +766,7 @@ int tb_generate_markdown_report(const TbConfig *config)
         }
     }
     if (append_text(text, sizeof(text), &used,
-                    "\n## 5. cgroup 指标摘要\n\n"
+                    "\n## 5. cgroup Metric Summary\n\n"
                     "cgroup_enabled: %s\n\n",
                     summary.cgroup_enabled) != 0) {
         return -1;
@@ -778,7 +777,7 @@ int tb_generate_markdown_report(const TbConfig *config)
         }
     }
     if (append_text(text, sizeof(text), &used,
-                    "\n## 6. oslab_monitor 对照结果\n\n"
+                    "\n## 6. oslab_monitor Cross-Check\n\n"
                     "oslab_monitor_available: %s\n\n",
                     summary.oslab_available ? "true" : "false") != 0) {
         return -1;
@@ -789,11 +788,11 @@ int tb_generate_markdown_report(const TbConfig *config)
         }
     }
     if (append_text(text, sizeof(text), &used,
-                    "\n## 7. 实验现象分析\n\n"
-                    "结合 PSI、cgroup 和 oslab_monitor 字段观察资源压力变化。\n\n"
-                    "## 8. 局限性\n\n"
-                    "本报告只基于当前 `samples.csv` 的 first、last、delta 和 max 摘要，"
-                    "更细粒度的趋势分析需要结合原始 CSV 或后续图表工具。\n") != 0) {
+                    "\n## 7. Runtime Observation\n\n"
+                    "Use PSI, cgroup, and oslab_monitor fields together to inspect resource pressure changes.\n\n"
+                    "## 8. Limitations\n\n"
+                    "This report summarizes first, last, delta, and max values from the current `samples.csv`; "
+                    "fine-grained trend analysis should use the raw CSV or external plotting tools.\n") != 0) {
         return -1;
     }
 

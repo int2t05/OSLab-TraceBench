@@ -1,6 +1,6 @@
 /*
  * 文件作用：集中输出调度结果、进程统计和平均指标。
- * 设计原因：稳定输出字段便于 Bash 测试、课程截图和文档验收复用。
+ * 设计原因：稳定输出字段便于 Bash 测试和技术文档复用。
  */
 #include "scheduler.h"
 
@@ -18,7 +18,7 @@ static int waiting_time(const Process *process)
 
 /*
  * 打印调度结果。
- * 平均值统一保留两位小数，避免不同模块或报告截图出现格式漂移。
+ * 平均值统一保留两位小数，避免不同模块或运行记录出现格式漂移。
  */
 void print_scheduler_result(const char *algorithm, const Process *processes, int count,
                             const Timeline *timeline)

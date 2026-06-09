@@ -1,121 +1,80 @@
 # OSLab TraceBench
 
-操作系统课程设计项目。当前已完成基础 OS 机制模拟、Linux `/proc` 内核观测扩展，以及 TraceBench v2 P0 资源压力与系统观测实验平台。
+OSLab TraceBench is a C/Linux research prototype for operating-system mechanism modeling and Linux runtime observability. It combines deterministic user-space models for core OS mechanisms with kernel-level `/proc` instrumentation and a resource-pressure tracing tool for reproducible CPU, memory, and I/O evaluation on Linux.
 
-基础部分用 C 命令行程序模拟：
+The repository is organized as a formal research codebase: source code, build files, reproducible input data, validation scripts, and technical documentation are kept; draft notes, prompt records, and generated runtime artifacts are intentionally excluded.
 
-- 处理机调度：FCFS、SJF、RR、非抢占式优先级调度。
-- 内存管理：动态分区 FF/BF、页面置换 FIFO/LRU。
-- 进程同步：生产者-消费者、读者-写者、哲学家进餐。
-- 文件系统：内存型虚拟磁盘、多级目录、块位图、文件读写删除。
+## Scope
 
-扩展部分实现 Linux 内核模块 `oslab_monitor.ko`，通过 `/proc/oslab_monitor/` 输出系统概览、进程列表和指定 PID 信息，并提供用户态工具 `oslabctl`。
+The project has three independently usable parts:
 
-## 实际使用场景
+- `basic/`: standalone C implementations for processor scheduling, memory management, process synchronization, and an in-memory filesystem model.
+- `extension/oslab_monitor/`: a Linux kernel module and user-space CLI for observing process and memory state through `/proc/oslab_monitor/`.
+- `extension/tracebench/`: a user-space resource-pressure and sampling tool that records PSI, cgroup v2, and optional `oslab_monitor` signals into CSV, summary text, and Markdown reports.
 
-本项目面向操作系统课程设计验收和实验报告整理，典型使用场景如下：
+The project does not modify the Linux kernel source tree and does not replace the host scheduler. All kernel-facing work is limited to a loadable module and `/proc` interfaces.
 
-- 课程验收人员拉取仓库后，先运行 `bash tests/run_all.sh`，快速确认调度、内存、同步和文件系统四个基础模块都能编译、运行并通过固定样例测试。
-- 学生编写基础实验报告时，分别运行 `scheduler`、`memory`、`sync`、`filesystem`，截取算法执行序列、分区或页框变化、线程同步日志和虚拟文件系统状态，用于解释 OS 基础机制。
-- 学生演示 Linux 内核与系统编程扩展时，在 Ubuntu VM 中加载 `oslab_monitor.ko`，读取 `/proc/oslab_monitor/overview`、`tasks`、`pid`，把真实 Linux 系统中的进程状态、调度字段和内存字段与课堂概念对应起来。
-- 学生或助教需要简化 `/proc` 操作时，使用 `oslabctl overview`、`oslabctl tasks`、`sudo oslabctl pid 1` 获取与直接 `cat /proc/oslab_monitor/*` 一致的输出。
-- 学生做 TraceBench v2 资源压力实验时，在 Ubuntu VM 中运行 CPU、memory、io 三类 profile，采集 PSI、cgroup v2 和可选 `oslab_monitor` 对照指标，生成 `samples.csv`、`summary.txt` 和 Markdown 报告。
-- 课程提交前，使用 README 中的基础测试、扩展测试和 TraceBench P0 测试命令复现实验结果，确认报告中的环境、命令和输出材料可重新生成。
+## Research Use Cases
 
-## TraceBench v2
+- Compare deterministic scheduling policies with stable inputs and reproducible output tables.
+- Analyze dynamic partition allocation and page replacement behavior under fixed reference strings.
+- Observe synchronization behavior across producer-consumer, readers-writers, and dining-philosophers workloads.
+- Inspect real Linux process, scheduling, and memory fields through a purpose-built `/proc` module.
+- Generate CPU, memory, and I/O pressure while sampling PSI and cgroup v2 counters in a controlled Ubuntu VM.
+- Produce reproducible CSV and Markdown artifacts for system-behavior analysis.
 
-TraceBench v2 是新增扩展模块，不替代基础四模块和 `extension/oslab_monitor/`。P0 已实现 `extension/tracebench/tracebench`，可在 Ubuntu VM 中运行 CPU、memory、io 压力实验，采集 PSI、cgroup v2 和可选 `/proc/oslab_monitor/overview` 对照指标，输出 `samples.csv`、`summary.txt` 和 Markdown 报告。
+## Environment
 
-v2 配套文档：
-
-- `docs/PRDv2.md`：定义 TraceBench v2 的 P0/P1/P2 需求、命令、输出和验收标准。
-- `docs/TECHv2.md`：定义 P0 技术方案、模块边界、数据结构、CSV 字段、权限模型和测试策略。
-- `docs/PLANv2.md`：定义代码文件、脚本、测试文件和验证顺序。
-- `docs/TRACEBENCH_REPORT_TEMPLATE.md`：定义 v2 实验报告整理结构。
-
-P0 环境要求：
+User-space modules:
 
 ```text
-Ubuntu 24.04 LTS VM
-cgroup v2
-/proc/pressure/cpu
-/proc/pressure/memory
-/proc/pressure/io
-gcc
-make
-sudo/root
-```
-
-构建和帮助：
-
-```bash
-cd extension/tracebench
-make
-./tracebench --help
-```
-
-运行三类 profile：
-
-```bash
-sudo ./tracebench run --profile cpu --duration 3 --sample-interval 1 --cpu-workers 2 --output output/test_cpu
-sudo ./tracebench run --profile memory --duration 3 --sample-interval 1 --memory-mb 64 --output output/test_memory
-sudo ./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 --output output/test_io
-```
-
-生成报告和清理：
-
-```bash
-./tracebench report --input output/test_cpu --output output/test_cpu/report.md
-sudo ./tracebench cleanup
-```
-
-P0 集成测试：
-
-```bash
-sudo bash tests/test_tracebench.sh
-```
-
-## 环境
-
-基础部分：
-
-```bash
+Linux
 gcc
 make
 bash
 pthread
 ```
 
-扩展部分：
+Kernel and TraceBench modules:
 
-```bash
-Ubuntu 22.04/24.04 VM
+```text
+Ubuntu 22.04 LTS or Ubuntu 24.04 LTS VM
 build-essential
 linux-headers-$(uname -r)
-insmod
-rmmod
+cgroup v2
+/proc/pressure/cpu
+/proc/pressure/memory
+/proc/pressure/io
+sudo/root for kernel-module loading and default TraceBench cgroup mode
 ```
 
-说明：扩展部分需要能加载内核模块的 Ubuntu VM，不以 WSL2 作为验收环境。
+WSL2 is not treated as the reference environment for kernel-module or full cgroup validation.
 
-## 一键测试基础模块
+## Quick Start
+
+Run the deterministic user-space validation suite:
 
 ```bash
 bash tests/run_all.sh
 ```
 
-该命令会依次测试：
+Build and inspect the Linux observability module in an Ubuntu VM:
 
-```text
-basic/scheduler
-basic/memory
-basic/filesystem
-basic/sync
+```bash
+cd extension/oslab_monitor
+bash tests/test_oslab_monitor.sh
 ```
 
-## 单独运行基础模块
+Build and validate TraceBench in an Ubuntu VM:
 
-调度：
+```bash
+cd extension/tracebench
+sudo bash tests/test_tracebench.sh
+```
+
+## Basic Modules
+
+Processor scheduling:
 
 ```bash
 cd basic/scheduler
@@ -127,7 +86,7 @@ make
 make clean
 ```
 
-内存：
+Memory management:
 
 ```bash
 cd basic/memory
@@ -139,7 +98,7 @@ make
 make clean
 ```
 
-同步：
+Process synchronization:
 
 ```bash
 cd basic/sync
@@ -150,7 +109,7 @@ make
 make clean
 ```
 
-文件系统：
+In-memory filesystem:
 
 ```bash
 cd basic/filesystem
@@ -159,30 +118,26 @@ make
 make clean
 ```
 
-## 运行扩展模块
+## Linux Observability Module
 
-在 Ubuntu VM 中执行：
-
-```bash
-cd extension/oslab_monitor
-bash tests/test_oslab_monitor.sh
-```
-
-手动演示：
+Build and load:
 
 ```bash
 cd extension/oslab_monitor/kernel
 make
 sudo insmod oslab_monitor.ko
+```
+
+Read exported interfaces:
+
+```bash
 cat /proc/oslab_monitor/overview
 cat /proc/oslab_monitor/tasks
 echo 1 | sudo tee /proc/oslab_monitor/pid
 cat /proc/oslab_monitor/pid
-sudo rmmod oslab_monitor
-make clean
 ```
 
-用户态工具：
+Use the CLI wrapper:
 
 ```bash
 cd extension/oslab_monitor/user
@@ -191,29 +146,69 @@ make
 ./oslabctl overview
 ./oslabctl tasks
 sudo ./oslabctl pid 1
+```
+
+Unload:
+
+```bash
+cd extension/oslab_monitor/kernel
+sudo rmmod oslab_monitor
 make clean
 ```
 
-## 项目结构
+## TraceBench
 
-```text
-basic/                       基础四个独立 CLI 模块
-extension/oslab_monitor/      Linux 内核模块、oslabctl、脚本和集成测试
-extension/tracebench/         TraceBench v2 用户态压力实验工具
-tests/run_all.sh              基础模块一键测试入口
-docs/COURSE_REPORT.md         课程设计报告
-docs/PRD.md                   需求文档
-docs/PRDv2.md                 TraceBench v2 需求文档
-docs/TECH.md                  技术方案
-docs/TECHv2.md                TraceBench v2 技术方案
-docs/FEATURES.md              功能清单
-docs/PLAN.md                  实现计划
-docs/PLANv2.md                TraceBench v2 实现计划
-docs/TRACEBENCH_REPORT_TEMPLATE.md TraceBench v2 报告模板
-docs/DOC_AUDIT.md             文档一致性审计
+Build and inspect the CLI:
+
+```bash
+cd extension/tracebench
+make
+./tracebench --help
 ```
 
-## 已验证环境
+Run controlled pressure profiles:
+
+```bash
+sudo ./tracebench run --profile cpu --duration 3 --sample-interval 1 --cpu-workers 2 --output output/cpu_run
+sudo ./tracebench run --profile memory --duration 3 --sample-interval 1 --memory-mb 64 --output output/memory_run
+sudo ./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 --output output/io_run
+```
+
+Generate a Markdown report and clean runtime state:
+
+```bash
+./tracebench report --input output/cpu_run --output output/cpu_run/report.md
+sudo ./tracebench cleanup
+```
+
+Each `tracebench run` writes:
+
+```text
+command.txt
+environment.txt
+samples.csv
+summary.txt
+```
+
+## Repository Layout
+
+```text
+basic/                         OS mechanism models
+basic/scheduler/               FCFS, SJF, RR, and priority scheduling
+basic/memory/                  dynamic partition and page replacement models
+basic/sync/                    pthread-based synchronization workloads
+basic/filesystem/              in-memory directory and block-allocation model
+extension/oslab_monitor/        Linux kernel module and /proc user CLI
+extension/tracebench/           resource-pressure sampling tool
+tests/run_all.sh                user-space validation entry point
+docs/PRD.md                     v1 requirements and scope
+docs/PRDv2.md                   TraceBench requirements and scope
+docs/TECH.md                    v1 technical design
+docs/TECHv2.md                  TraceBench technical design
+docs/FEATURES.md                implemented capability index
+```
+
+## Verified Reference Environment
 
 ```text
 Ubuntu 24.04.2 LTS
@@ -222,7 +217,7 @@ gcc 13.3.0
 GNU Make 4.3
 ```
 
-已通过：
+Validated commands:
 
 ```bash
 bash tests/run_all.sh

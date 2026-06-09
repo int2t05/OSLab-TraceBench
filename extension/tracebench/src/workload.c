@@ -1,7 +1,7 @@
 /*
  * 文件作用：实现 TraceBench workload 子进程中的资源压力生成。
  * 设计原因：压力生成必须与父进程采样和 cgroup 管理分离，子进程等待父进程
- * 完成 cgroup 归组后才开始运行，保证采样指标属于本次实验。
+ * 完成 cgroup 归组后才开始运行，保证采样指标属于本次运行。
  */
 
 #include "tracebench.h"
@@ -169,7 +169,7 @@ static int write_io_file_once(const char *path, const unsigned char *buffer, siz
 
 /*
  * I/O workload 覆盖同一个固定临时文件，而不是持续追加。
- * 这样可以制造写入和 fsync 压力，同时避免测试环境磁盘占用无限增长。
+ * 这样可以制造写入和 fsync 压力，同时避免验证环境磁盘占用无限增长。
  */
 static int run_io_workload(const TbConfig *config)
 {

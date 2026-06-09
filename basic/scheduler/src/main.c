@@ -19,7 +19,7 @@ static void print_help(const char *program)
 
 /*
  * 解析算法参数。
- * 这里只接受 PRD 固定的 --algorithm 形式，是为了避免扩展出计划外 CLI 形态。
+ * 这里只接受 PRD 固定的 --algorithm 形式，是为了避免扩展出未文档化的 CLI 形态。
  */
 static int parse_algorithm_arg(int argc, char **argv, const char **algorithm)
 {
