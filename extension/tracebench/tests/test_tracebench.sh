@@ -86,4 +86,25 @@ test -f output/test_cgroup/samples.csv
 grep -q "cgroup_enabled" output/test_cgroup/samples.csv
 grep -q "cgroup_memory_current" output/test_cgroup/samples.csv
 
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    set +e
+    sudo -u "$SUDO_USER" ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/non_root_cpu >output/non_root.out 2>&1
+    status=$?
+    set -e
+    test "$status" -ne 0
+    grep -q "error:" output/non_root.out
+else
+    printf 'warning: skipping non-root cgroup failure check because SUDO_USER is unavailable\n' >&2
+fi
+
+rm -rf output/test_cpu
+start_sec="$(date +%s)"
+./tracebench run --profile cpu --duration 3 --sample-interval 1 --cpu-workers 2 --output output/test_cpu
+end_sec="$(date +%s)"
+elapsed_sec=$((end_sec - start_sec))
+test "$elapsed_sec" -ge 2
+test "$elapsed_sec" -le 6
+test -f output/test_cpu/command.txt
+test -f output/test_cpu/environment.txt
+
 printf 'tracebench cli tests passed\n'

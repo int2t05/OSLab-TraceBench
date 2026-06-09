@@ -6,11 +6,27 @@
 
 #include "tracebench.h"
 
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <sys/utsname.h>
+#include <time.h>
 #include <unistd.h>
+
+static volatile sig_atomic_t run_interrupted = 0;
+static pid_t active_child_pid = -1;
+
+static void handle_run_signal(int signo)
+{
+    (void)signo;
+    run_interrupted = 1;
+    if (active_child_pid > 0) {
+        kill(active_child_pid, SIGTERM);
+    }
+}
 
 static void read_gcc_version(char *buffer, int size)
 {
@@ -48,9 +64,177 @@ static int append_text(char *buffer, int size, int *used, const char *fmt, ...)
     return 0;
 }
 
+static int open_csv_file(const TbConfig *config, FILE **csv_out)
+{
+    char csv_path[TB_PATH_LEN];
+
+    if (tb_join_path(csv_path, sizeof(csv_path), config->output_path, "samples.csv") != 0) {
+        return -1;
+    }
+
+    *csv_out = fopen(csv_path, "w");
+    if (*csv_out == NULL) {
+        tb_print_error("failed to open %s for writing: %s", csv_path, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+static int write_sample_row(FILE *csv, const TbConfig *config, const TbCgroup *cgroup,
+                            int sample_index, long long start_ms)
+{
+    TbSample sample;
+
+    memset(&sample, 0, sizeof(sample));
+    sample.sample_index = sample_index;
+    sample.elapsed_ms = tb_now_millis() - start_ms;
+    sample.profile = config->profile;
+
+    if (tb_read_psi_snapshot(&sample.psi) != 0) {
+        return -1;
+    }
+    if (tb_cgroup_read_stats(cgroup, &sample.cgroup) != 0) {
+        return -1;
+    }
+    if (tb_write_csv_sample(csv, config, cgroup, &sample) != 0) {
+        return -1;
+    }
+    fflush(csv);
+    return 0;
+}
+
+static int wait_for_child(pid_t child_pid)
+{
+    int status;
+
+    while (waitpid(child_pid, &status, 0) < 0) {
+        if (errno != EINTR) {
+            tb_print_error("failed to wait for workload child: %s", strerror(errno));
+            return -1;
+        }
+    }
+
+    if (run_interrupted) {
+        return -1;
+    }
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        tb_print_error("workload child exited abnormally");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
+ * 采样间隔用 nanosleep 而不是 usleep。
+ * c11 + POSIX_C_SOURCE=200809L 下 usleep 可能不暴露声明，nanosleep 可以避免编译告警；
+ * 中断信号到来时立即返回，让清理路径尽快回收 workload。
+ */
+static void sleep_millis(long long sleep_ms)
+{
+    struct timespec request;
+
+    request.tv_sec = sleep_ms / 1000LL;
+    request.tv_nsec = (sleep_ms % 1000LL) * 1000000L;
+
+    while (nanosleep(&request, &request) != 0 && errno == EINTR) {
+        if (run_interrupted) {
+            break;
+        }
+    }
+}
+
+static int run_sampling_loop(FILE *csv, const TbConfig *config, const TbCgroup *cgroup)
+{
+    long long start_ms = tb_now_millis();
+    long long end_ms = start_ms + (long long)config->duration_sec * 1000LL;
+    long long interval_ms = (long long)config->sample_interval_sec * 1000LL;
+    int sample_index = 0;
+
+    if (tb_write_csv_header(csv) != 0) {
+        return -1;
+    }
+
+    while (!run_interrupted) {
+        long long now = tb_now_millis();
+        long long sleep_ms;
+
+        if (now > end_ms) {
+            break;
+        }
+        if (write_sample_row(csv, config, cgroup, sample_index, start_ms) != 0) {
+            return -1;
+        }
+        sample_index++;
+
+        now = tb_now_millis();
+        sleep_ms = interval_ms;
+        if (now + sleep_ms > end_ms) {
+            sleep_ms = end_ms - now;
+        }
+        if (sleep_ms <= 0) {
+            break;
+        }
+        sleep_millis(sleep_ms);
+    }
+
+    return run_interrupted ? -1 : 0;
+}
+
+static int start_workload_child(const TbConfig *config, const TbCgroup *cgroup, pid_t *child_out)
+{
+    int pipe_fds[2];
+    pid_t child_pid;
+    char signal_byte = '1';
+
+    if (pipe(pipe_fds) != 0) {
+        tb_print_error("failed to create workload pipe: %s", strerror(errno));
+        return -1;
+    }
+
+    child_pid = fork();
+    if (child_pid < 0) {
+        tb_print_error("failed to fork workload child: %s", strerror(errno));
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+        return -1;
+    }
+
+    if (child_pid == 0) {
+        close(pipe_fds[1]);
+        _exit(tb_run_workload_child(config, pipe_fds[0]) == 0 ? 0 : 1);
+    }
+
+    close(pipe_fds[0]);
+    if (tb_cgroup_add_pid(cgroup, (int)child_pid) != 0) {
+        kill(child_pid, SIGTERM);
+        close(pipe_fds[1]);
+        waitpid(child_pid, NULL, 0);
+        return -1;
+    }
+    if (write(pipe_fds[1], &signal_byte, 1) != 1) {
+        tb_print_error("failed to signal workload child: %s", strerror(errno));
+        kill(child_pid, SIGTERM);
+        close(pipe_fds[1]);
+        waitpid(child_pid, NULL, 0);
+        return -1;
+    }
+    close(pipe_fds[1]);
+
+    *child_out = child_pid;
+    return 0;
+}
+
 int tb_run_command(const TbConfig *config, int argc, char **argv)
 {
     TbCgroup cgroup;
+    FILE *csv = NULL;
+    pid_t child_pid = -1;
+    struct sigaction action;
+    struct sigaction old_int;
+    struct sigaction old_term;
+    int result = 1;
 
     if (tb_mkdir_p(config->output_path) != 0) {
         return 1;
@@ -68,53 +252,47 @@ int tb_run_command(const TbConfig *config, int argc, char **argv)
         return 1;
     }
 
-    {
-        char csv_path[TB_PATH_LEN];
-        FILE *csv;
-        TbSample sample;
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = handle_run_signal;
+    sigemptyset(&action.sa_mask);
+    run_interrupted = 0;
+    active_child_pid = -1;
+    sigaction(SIGINT, &action, &old_int);
+    sigaction(SIGTERM, &action, &old_term);
 
-        memset(&sample, 0, sizeof(sample));
-        sample.sample_index = 0;
-        sample.elapsed_ms = 0;
-        sample.profile = config->profile;
-
-        if (tb_read_psi_snapshot(&sample.psi) != 0) {
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
-        if (tb_cgroup_read_stats(&cgroup, &sample.cgroup) != 0) {
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
-        if (tb_join_path(csv_path, sizeof(csv_path), config->output_path, "samples.csv") != 0) {
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
-        csv = fopen(csv_path, "w");
-        if (csv == NULL) {
-            tb_print_error("failed to open %s for writing", csv_path);
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
-        if (tb_write_csv_header(csv) != 0 ||
-            tb_write_csv_sample(csv, config, &cgroup, &sample) != 0) {
-            fclose(csv);
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
-        if (fclose(csv) != 0) {
-            tb_print_error("failed to close %s", csv_path);
-            tb_cgroup_remove_run(&cgroup);
-            return 1;
-        }
+    if (open_csv_file(config, &csv) != 0) {
+        goto cleanup;
     }
-
-    if (tb_cgroup_remove_run(&cgroup) != 0) {
-        return 1;
+    if (start_workload_child(config, &cgroup, &child_pid) != 0) {
+        goto cleanup;
     }
+    active_child_pid = child_pid;
+    if (run_sampling_loop(csv, config, &cgroup) != 0) {
+        kill(child_pid, SIGTERM);
+        goto cleanup;
+    }
+    if (wait_for_child(child_pid) != 0) {
+        goto cleanup;
+    }
+    child_pid = -1;
+    active_child_pid = -1;
+    result = 0;
 
-    fprintf(stderr, "tracebench: sampling and workload are not implemented yet\n");
-    return 0;
+cleanup:
+    if (child_pid > 0) {
+        kill(child_pid, SIGTERM);
+        waitpid(child_pid, NULL, 0);
+        active_child_pid = -1;
+    }
+    if (csv != NULL) {
+        fclose(csv);
+    }
+    if (tb_cgroup_remove_run(&cgroup) != 0 && result == 0) {
+        result = 1;
+    }
+    sigaction(SIGINT, &old_int, NULL);
+    sigaction(SIGTERM, &old_term, NULL);
+    return result;
 }
 
 int tb_report_command(const TbConfig *config)
