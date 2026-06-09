@@ -8,6 +8,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+cleanup() {
+    # 使用 trap 是为了测试中途失败时仍尽量清理 cgroup 和残留 I/O 临时文件，避免污染后续验收。
+    if [ -x ./tracebench ]; then
+        ./tracebench cleanup >/dev/null 2>&1 || true
+    fi
+}
+
+trap cleanup EXIT
+
 if [ "$(id -u)" -eq 0 ]; then
     echo "running as root"
 else
@@ -20,6 +29,7 @@ test -d /sys/fs/cgroup
 
 make clean
 make
+test -x ./tracebench
 
 bash -n scripts/run_cpu_demo.sh
 bash -n scripts/run_memory_demo.sh
@@ -132,8 +142,10 @@ rm -rf output/test_nocg
 test -f output/test_nocg/command.txt
 test -f output/test_nocg/environment.txt
 test -f output/test_nocg/samples.csv
+test -f output/test_nocg/summary.txt
 grep -q "profile: cpu" output/test_nocg/command.txt
 grep -q "tracebench_version:" output/test_nocg/environment.txt
+grep -q "no-cgroup" output/test_nocg/summary.txt
 grep -q "cpu_some_avg10" output/test_nocg/samples.csv
 grep -q "memory_some_avg10" output/test_nocg/samples.csv
 grep -q "io_some_avg10" output/test_nocg/samples.csv
@@ -214,6 +226,7 @@ test "$elapsed_sec" -le 6
 test -f output/test_memory/command.txt
 test -f output/test_memory/environment.txt
 test -f output/test_memory/samples.csv
+test -f output/test_memory/summary.txt
 grep -q "memory_some_avg10" output/test_memory/samples.csv
 grep -q "cgroup_memory_current" output/test_memory/samples.csv
 check_csv_header output/test_memory/samples.csv
@@ -231,6 +244,7 @@ test -f output/test_io/command.txt
 test -f output/test_io/environment.txt
 test ! -f output/test_io/tracebench_io.tmp
 test -f output/test_io/samples.csv
+test -f output/test_io/summary.txt
 grep -q "io_some_avg10" output/test_io/samples.csv
 check_csv_header output/test_io/samples.csv
 check_min_rows output/test_io/samples.csv 3
