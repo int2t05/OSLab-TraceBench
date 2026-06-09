@@ -8,7 +8,21 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+make clean
 make
+
+require_readable() {
+    local path="$1"
+
+    if [ ! -r "$path" ]; then
+        printf 'error: %s is required for TraceBench P0 PSI sampling\n' "$path" >&2
+        exit 1
+    fi
+}
+
+require_readable /proc/pressure/cpu
+require_readable /proc/pressure/memory
+require_readable /proc/pressure/io
 
 help_output="$(./tracebench --help)"
 grep -q "run" <<<"$help_output"
@@ -47,7 +61,11 @@ rm -rf output/test_nocg
 ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_nocg --no-cgroup
 test -f output/test_nocg/command.txt
 test -f output/test_nocg/environment.txt
+test -f output/test_nocg/samples.csv
 grep -q "profile: cpu" output/test_nocg/command.txt
 grep -q "tracebench_version:" output/test_nocg/environment.txt
+grep -q "cpu_some_avg10" output/test_nocg/samples.csv
+grep -q "memory_some_avg10" output/test_nocg/samples.csv
+grep -q "io_some_avg10" output/test_nocg/samples.csv
 
 printf 'tracebench cli tests passed\n'

@@ -63,6 +63,39 @@ int tb_run_command(const TbConfig *config, int argc, char **argv)
     if (tb_write_environment_file(config) != 0) {
         return 1;
     }
+    {
+        char csv_path[TB_PATH_LEN];
+        FILE *csv;
+        TbCgroup cgroup;
+        TbSample sample;
+
+        memset(&cgroup, 0, sizeof(cgroup));
+        memset(&sample, 0, sizeof(sample));
+        sample.sample_index = 0;
+        sample.elapsed_ms = 0;
+        sample.profile = config->profile;
+
+        if (tb_read_psi_snapshot(&sample.psi) != 0) {
+            return 1;
+        }
+        if (tb_join_path(csv_path, sizeof(csv_path), config->output_path, "samples.csv") != 0) {
+            return 1;
+        }
+        csv = fopen(csv_path, "w");
+        if (csv == NULL) {
+            tb_print_error("failed to open %s for writing", csv_path);
+            return 1;
+        }
+        if (tb_write_csv_header(csv) != 0 ||
+            tb_write_csv_sample(csv, config, &cgroup, &sample) != 0) {
+            fclose(csv);
+            return 1;
+        }
+        if (fclose(csv) != 0) {
+            tb_print_error("failed to close %s", csv_path);
+            return 1;
+        }
+    }
 
     fprintf(stderr, "tracebench: sampling and workload are not implemented yet\n");
     return 0;
