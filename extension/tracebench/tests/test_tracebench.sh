@@ -43,4 +43,11 @@ check_error "invalid duration" \
 check_error "sample interval greater than duration" \
     ./tracebench run --profile cpu --duration 1 --sample-interval 2 --output output/bad
 
+rm -rf output/test_nocg
+./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_nocg --no-cgroup
+test -f output/test_nocg/command.txt
+test -f output/test_nocg/environment.txt
+grep -q "profile: cpu" output/test_nocg/command.txt
+grep -q "tracebench_version:" output/test_nocg/environment.txt
+
 printf 'tracebench cli tests passed\n'

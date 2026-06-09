@@ -6,13 +6,66 @@
 
 #include "tracebench.h"
 
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <sys/utsname.h>
+
+static void read_gcc_version(char *buffer, int size)
+{
+    FILE *pipe_file;
+
+    snprintf(buffer, (size_t)size, "unavailable");
+    pipe_file = popen("gcc --version 2>/dev/null", "r");
+    if (pipe_file == NULL) {
+        return;
+    }
+
+    if (fgets(buffer, size, pipe_file) == NULL) {
+        snprintf(buffer, (size_t)size, "unavailable");
+    } else {
+        buffer[strcspn(buffer, "\r\n")] = '\0';
+    }
+
+    pclose(pipe_file);
+}
+
+static int append_text(char *buffer, int size, int *used, const char *fmt, ...)
+{
+    va_list args;
+    int written;
+
+    va_start(args, fmt);
+    written = vsnprintf(buffer + *used, (size_t)(size - *used), fmt, args);
+    va_end(args);
+    if (written < 0 || written >= size - *used) {
+        tb_print_error("output text is too large");
+        return -1;
+    }
+
+    *used += written;
+    return 0;
+}
+
 int tb_run_command(const TbConfig *config, int argc, char **argv)
 {
-    (void)config;
-    (void)argc;
-    (void)argv;
-    tb_print_error("run is not implemented yet");
-    return 1;
+    if (!config->no_cgroup) {
+        tb_print_error("cgroup mode is not implemented yet; use --no-cgroup for current low-permission output setup");
+        return 1;
+    }
+
+    if (tb_mkdir_p(config->output_path) != 0) {
+        return 1;
+    }
+    if (tb_write_command_file(config, argc, argv) != 0) {
+        return 1;
+    }
+    if (tb_write_environment_file(config) != 0) {
+        return 1;
+    }
+
+    fprintf(stderr, "tracebench: sampling and workload are not implemented yet\n");
+    return 0;
 }
 
 int tb_report_command(const TbConfig *config)
@@ -29,18 +82,97 @@ int tb_cleanup_command(const TbConfig *config)
 
 int tb_write_command_file(const TbConfig *config, int argc, char **argv)
 {
-    (void)config;
-    (void)argc;
-    (void)argv;
-    tb_print_error("command.txt output is not implemented yet");
-    return -1;
+    char path[TB_PATH_LEN];
+    char text[TB_LINE_LEN * 2];
+    int used = 0;
+
+    if (tb_join_path(path, sizeof(path), config->output_path, "command.txt") != 0) {
+        return -1;
+    }
+
+    if (append_text(text, sizeof(text), &used, "command:") != 0) {
+        return -1;
+    }
+    for (int i = 0; i < argc; i++) {
+        if (append_text(text, sizeof(text), &used, " %s", argv[i]) != 0) {
+            return -1;
+        }
+    }
+    if (append_text(text, sizeof(text), &used,
+                    "\nprofile: %s\n"
+                    "duration_sec: %d\n"
+                    "sample_interval_sec: %d\n"
+                    "cpu_workers: %d\n"
+                    "memory_mb: %d\n"
+                    "io_mb: %d\n"
+                    "cgroup_name: %s\n"
+                    "no_cgroup: %s\n"
+                    "with_oslab_monitor: %s\n",
+                    tb_profile_name(config->profile),
+                    config->duration_sec,
+                    config->sample_interval_sec,
+                    config->cpu_workers,
+                    config->memory_mb,
+                    config->io_mb,
+                    config->cgroup_name,
+                    config->no_cgroup ? "true" : "false",
+                    config->with_oslab_monitor ? "true" : "false") != 0) {
+        return -1;
+    }
+
+    return tb_write_text_file(path, text);
 }
 
 int tb_write_environment_file(const TbConfig *config)
 {
-    (void)config;
-    tb_print_error("environment.txt output is not implemented yet");
-    return -1;
+    char path[TB_PATH_LEN];
+    char os_release[TB_LINE_LEN];
+    char gcc_version[TB_VALUE_LEN];
+    char text[TB_LINE_LEN * 4];
+    struct utsname uts;
+    int used = 0;
+
+    if (tb_join_path(path, sizeof(path), config->output_path, "environment.txt") != 0) {
+        return -1;
+    }
+
+    os_release[0] = '\0';
+    if (tb_read_text_file("/etc/os-release", os_release, sizeof(os_release)) != 0) {
+        snprintf(os_release, sizeof(os_release), "unavailable");
+    }
+    read_gcc_version(gcc_version, sizeof(gcc_version));
+
+    if (uname(&uts) != 0) {
+        snprintf(uts.sysname, sizeof(uts.sysname), "unknown");
+        snprintf(uts.release, sizeof(uts.release), "unknown");
+        snprintf(uts.version, sizeof(uts.version), "unknown");
+        snprintf(uts.machine, sizeof(uts.machine), "unknown");
+    }
+
+    if (append_text(text, sizeof(text), &used,
+                    "uname: %s %s %s %s\n"
+                    "os_release:\n%s\n"
+                    "gcc: %s\n"
+                    "cgroup_v2: %s\n"
+                    "psi_cpu: %s\n"
+                    "psi_memory: %s\n"
+                    "psi_io: %s\n"
+                    "oslab_monitor_overview: %s\n"
+                    "tracebench_version: v2-p0\n",
+                    uts.sysname,
+                    uts.release,
+                    uts.version,
+                    uts.machine,
+                    gcc_version,
+                    tb_path_readable("/sys/fs/cgroup/cgroup.controllers") ? "present" : "missing",
+                    tb_path_readable("/proc/pressure/cpu") ? "present" : "missing",
+                    tb_path_readable("/proc/pressure/memory") ? "present" : "missing",
+                    tb_path_readable("/proc/pressure/io") ? "present" : "missing",
+                    tb_path_readable("/proc/oslab_monitor/overview") ? "present" : "missing") != 0) {
+        return -1;
+    }
+
+    return tb_write_text_file(path, text);
 }
 
 int tb_write_summary_file(const TbConfig *config, const char *csv_path)

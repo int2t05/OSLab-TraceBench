@@ -10,7 +10,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 void tb_print_error(const char *fmt, ...)
 {
@@ -92,26 +95,122 @@ void tb_print_help(const char *argv0)
 
 int tb_mkdir_p(const char *path)
 {
-    (void)path;
-    tb_print_error("run output directory support is not implemented yet");
-    return -1;
+    char tmp[TB_PATH_LEN];
+    int len;
+
+    if (path == NULL || path[0] == '\0') {
+        tb_print_error("output path must not be empty");
+        return -1;
+    }
+    if ((int)strlen(path) >= TB_PATH_LEN) {
+        tb_print_error("output path is too long");
+        return -1;
+    }
+
+    snprintf(tmp, sizeof(tmp), "%s", path);
+    len = (int)strlen(tmp);
+    while (len > 1 && tmp[len - 1] == '/') {
+        tmp[len - 1] = '\0';
+        len--;
+    }
+
+    for (int i = 1; tmp[i] != '\0'; i++) {
+        if (tmp[i] == '/') {
+            tmp[i] = '\0';
+            if (mkdir(tmp, 0775) != 0 && errno != EEXIST) {
+                tb_print_error("failed to create directory %s: %s", tmp, strerror(errno));
+                return -1;
+            }
+            tmp[i] = '/';
+        }
+    }
+
+    if (mkdir(tmp, 0775) != 0 && errno != EEXIST) {
+        tb_print_error("failed to create directory %s: %s", tmp, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+int tb_join_path(char *dest, int dest_size, const char *dir, const char *name)
+{
+    int written;
+
+    if (dest == NULL || dir == NULL || name == NULL || dest_size <= 0) {
+        tb_print_error("invalid path join arguments");
+        return -1;
+    }
+
+    if (strstr(name, "/") != NULL || strcmp(name, "..") == 0) {
+        tb_print_error("invalid file name for path join: %s", name);
+        return -1;
+    }
+
+    written = snprintf(dest, (size_t)dest_size, "%s%s%s",
+                       dir, (dir[0] != '\0' && dir[strlen(dir) - 1] == '/') ? "" : "/", name);
+    if (written < 0 || written >= dest_size) {
+        tb_print_error("path is too long: %s/%s", dir, name);
+        return -1;
+    }
+
+    return 0;
 }
 
 int tb_read_text_file(const char *path, char *buffer, int buffer_size)
 {
-    (void)path;
-    (void)buffer;
-    (void)buffer_size;
-    tb_print_error("file reading is not implemented yet");
-    return -1;
+    FILE *file;
+    size_t nread;
+
+    if (buffer == NULL || buffer_size <= 0) {
+        tb_print_error("invalid read buffer");
+        return -1;
+    }
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        tb_print_error("failed to open %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    nread = fread(buffer, 1, (size_t)buffer_size - 1, file);
+    if (ferror(file)) {
+        tb_print_error("failed to read %s: %s", path, strerror(errno));
+        fclose(file);
+        return -1;
+    }
+    buffer[nread] = '\0';
+    fclose(file);
+    return 0;
 }
 
 int tb_write_text_file(const char *path, const char *text)
 {
-    (void)path;
-    (void)text;
-    tb_print_error("file writing is not implemented yet");
-    return -1;
+    FILE *file;
+
+    file = fopen(path, "w");
+    if (file == NULL) {
+        tb_print_error("failed to open %s for writing: %s", path, strerror(errno));
+        return -1;
+    }
+
+    if (fputs(text, file) == EOF) {
+        tb_print_error("failed to write %s: %s", path, strerror(errno));
+        fclose(file);
+        return -1;
+    }
+
+    if (fclose(file) != 0) {
+        tb_print_error("failed to close %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+int tb_path_readable(const char *path)
+{
+    return access(path, R_OK) == 0;
 }
 
 long long tb_now_millis(void)

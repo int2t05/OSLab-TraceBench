@@ -144,8 +144,10 @@ int tb_write_summary_file(const TbConfig *config, const char *csv_path);
 int tb_generate_markdown_report(const TbConfig *config);
 
 int tb_mkdir_p(const char *path);
+int tb_join_path(char *dest, int dest_size, const char *dir, const char *name);
 int tb_read_text_file(const char *path, char *buffer, int buffer_size);
 int tb_write_text_file(const char *path, const char *text);
+int tb_path_readable(const char *path);
 long long tb_now_millis(void);
 void tb_print_error(const char *fmt, ...);
 int tb_parse_positive_int(const char *text, const char *name, int *value);
