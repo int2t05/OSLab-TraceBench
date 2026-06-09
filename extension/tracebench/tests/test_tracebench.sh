@@ -70,6 +70,9 @@ check_error "sample interval greater than duration" \
 check_error "invalid memory size" \
     ./tracebench run --profile memory --duration 1 --sample-interval 1 --memory-mb 0 --output output/bad_memory
 
+check_error "invalid io size" \
+    ./tracebench run --profile io --duration 1 --sample-interval 1 --io-mb 0 --output output/bad_io
+
 rm -rf output/test_nocg
 ./tracebench run --profile cpu --duration 1 --sample-interval 1 --output output/test_nocg --no-cgroup
 test -f output/test_nocg/command.txt
@@ -119,5 +122,16 @@ test "$elapsed_sec" -ge 2
 test "$elapsed_sec" -le 6
 test -f output/test_memory/command.txt
 test -f output/test_memory/environment.txt
+
+rm -rf output/test_io
+start_sec="$(date +%s)"
+./tracebench run --profile io --duration 3 --sample-interval 1 --io-mb 16 --output output/test_io
+end_sec="$(date +%s)"
+elapsed_sec=$((end_sec - start_sec))
+test "$elapsed_sec" -ge 2
+test "$elapsed_sec" -le 8
+test -f output/test_io/command.txt
+test -f output/test_io/environment.txt
+test ! -f output/test_io/tracebench_io.tmp
 
 printf 'tracebench cli tests passed\n'

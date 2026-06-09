@@ -6,9 +6,12 @@
 
 #include "tracebench.h"
 
+#include <errno.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -127,6 +130,91 @@ static int run_memory_workload(const TbConfig *config)
     return 0;
 }
 
+static int write_io_file_once(const char *path, const unsigned char *buffer, size_t buffer_size,
+                              size_t total_bytes)
+{
+    FILE *file;
+    size_t written_total = 0;
+
+    file = fopen(path, "wb");
+    if (file == NULL) {
+        tb_print_error("failed to open I/O workload file %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    while (written_total < total_bytes) {
+        size_t remain = total_bytes - written_total;
+        size_t chunk = remain < buffer_size ? remain : buffer_size;
+
+        if (fwrite(buffer, 1, chunk, file) != chunk) {
+            tb_print_error("failed to write I/O workload file %s", path);
+            fclose(file);
+            return -1;
+        }
+        written_total += chunk;
+    }
+
+    if (fflush(file) != 0 || fsync(fileno(file)) != 0) {
+        tb_print_error("failed to fsync I/O workload file %s: %s", path, strerror(errno));
+        fclose(file);
+        return -1;
+    }
+    if (fclose(file) != 0) {
+        tb_print_error("failed to close I/O workload file %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
+ * I/O workload 覆盖同一个固定临时文件，而不是持续追加。
+ * 这样可以制造写入和 fsync 压力，同时避免测试环境磁盘占用无限增长。
+ */
+static int run_io_workload(const TbConfig *config)
+{
+    char path[TB_PATH_LEN];
+    unsigned char *buffer;
+    size_t buffer_size = 64U * 1024U;
+    size_t total_bytes;
+    long long end_ms;
+    int result = 0;
+
+    if ((size_t)config->io_mb > (SIZE_MAX / (1024U * 1024U))) {
+        tb_print_error("--io-mb is too large");
+        return -1;
+    }
+    total_bytes = (size_t)config->io_mb * 1024U * 1024U;
+    if (tb_join_path(path, sizeof(path), config->output_path, "tracebench_io.tmp") != 0) {
+        return -1;
+    }
+
+    buffer = malloc(buffer_size);
+    if (buffer == NULL) {
+        tb_print_error("failed to allocate I/O workload buffer");
+        return -1;
+    }
+    for (size_t i = 0; i < buffer_size; i++) {
+        buffer[i] = (unsigned char)(i & 0xffU);
+    }
+
+    end_ms = tb_now_millis() + (long long)config->duration_sec * 1000LL;
+    while (tb_now_millis() < end_ms) {
+        if (write_io_file_once(path, buffer, buffer_size, total_bytes) != 0) {
+            result = -1;
+            break;
+        }
+    }
+
+    free(buffer);
+    if (remove(path) != 0 && errno != ENOENT) {
+        tb_print_error("failed to remove I/O workload file %s: %s", path, strerror(errno));
+        return -1;
+    }
+
+    return result;
+}
+
 int tb_run_workload_child(const TbConfig *config, int start_fd)
 {
     if (wait_for_start_signal(start_fd) != 0) {
@@ -138,6 +226,9 @@ int tb_run_workload_child(const TbConfig *config, int start_fd)
     }
     if (config->profile == TB_PROFILE_MEMORY) {
         return run_memory_workload(config);
+    }
+    if (config->profile == TB_PROFILE_IO) {
+        return run_io_workload(config);
     }
 
     tb_print_error("selected workload is not implemented yet");
